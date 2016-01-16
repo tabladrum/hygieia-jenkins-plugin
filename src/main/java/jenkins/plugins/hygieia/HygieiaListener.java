@@ -24,16 +24,14 @@ public class HygieiaListener extends RunListener<AbstractBuild> {
 
     @Override
     public void onCompleted(AbstractBuild r, TaskListener listener) {
-        logger.info("Build completed");
         getNotifier(r.getProject(), listener).completed(r);
         super.onCompleted(r, listener);
     }
 
     @Override
     public void onStarted(AbstractBuild r, TaskListener listener) {
-        logger.info("Build Started");
-        // getNotifier(r.getProject()).started(r);
-        // super.onStarted(r, listener);
+         getNotifier(r.getProject(), listener).started(r);
+         super.onStarted(r, listener);
     }
 
     @Override
@@ -54,7 +52,6 @@ public class HygieiaListener extends RunListener<AbstractBuild> {
         Map<Descriptor<Publisher>, Publisher> map = project.getPublishersList().toMap();
         for (Publisher publisher : map.values()) {
             if (publisher instanceof HygieiaPublisher) {
-                logger.info("Getting Hygieia notifier");
                 return new ActiveNotifier((HygieiaPublisher) publisher, (BuildListener)listener);
             }
         }

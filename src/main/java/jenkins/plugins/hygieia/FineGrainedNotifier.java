@@ -5,7 +5,7 @@ import hudson.model.AbstractBuild;
 public interface FineGrainedNotifier {
 
 //    @SuppressWarnings("rawtypes")
-//    void started(AbstractBuild r);
+    void started(AbstractBuild r);
 
     @SuppressWarnings("rawtypes")
     void deleted(AbstractBuild r);

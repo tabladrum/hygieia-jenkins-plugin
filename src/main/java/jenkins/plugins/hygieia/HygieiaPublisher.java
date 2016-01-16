@@ -126,9 +126,7 @@ public class HygieiaPublisher extends Notifier {
         private boolean hygieiaNotifyBuildArtifactStatus;
 
         public DescriptorImpl() {
-            logger.info("Publisher.DescriptorImpl:" + hygieiaAPIUrl + hygieiaToken + hygieiaNotifyBuildStatus + includeHygieiaTestSummary+hygieiaNotifyBuildArtifactStatus);
-
-            load();
+           load();
         }
 
         public String getHygieiaAPIUrl() {
@@ -175,8 +173,6 @@ public class HygieiaPublisher extends Notifier {
             boolean hygieiaNotifyBuildStatus = "true".equals(sr.getParameter("hygieiaNotifyBuildStatus"));
             boolean hygieiaNotifyBuildArtifactStatus = "true".equals(sr.getParameter("hygieiaNotifyBuildArtifactStatus"));
             boolean includeHygieiaTestSummary = "true".equals(sr.getParameter("includeHygieiaTestSummary"));
-            logger.info("Publisher newInstance:" + hygieiaAPIUrl + hygieiaToken + hygieiaNotifyBuildStatus + includeHygieiaTestSummary+hygieiaNotifyBuildArtifactStatus);
-
             return new HygieiaPublisher(hygieiaAPIUrl, hygieiaToken, hygieiaNotifyBuildStatus, hygieiaNotifyBuildArtifactStatus,
                     includeHygieiaTestSummary);
         }
@@ -209,9 +205,7 @@ public class HygieiaPublisher extends Notifier {
                 if (StringUtils.isEmpty(targetToken)) {
                     targetToken = this.hygieiaToken;
                 }
-                logger.warning("Hygieia url=" + hygieiaAPIUrl);
                 HygieiaService testHygieiaService = getHygieiaService(hostUrl, targetToken);
-                String message = "Hygieia Jenkins plugin: you're all set";
                 boolean success = testHygieiaService.testConnection();
                 return success ? FormValidation.ok("Success") : FormValidation.error("Failure");
             } catch (Exception e) {

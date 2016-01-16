@@ -22,6 +22,7 @@ public class DefaultHygieiaService implements HygieiaService {
     private String hygieiaAPIUrl = "";
     private String hygieiaToken = "";
 
+
     public DefaultHygieiaService(String hygieiaAPIUrl, String hygieiaToken) {
         super();
         this.hygieiaAPIUrl = hygieiaAPIUrl;
@@ -60,7 +61,6 @@ public class DefaultHygieiaService implements HygieiaService {
         boolean result = true;
 
         String url = hygieiaAPIUrl + "/build";
-        logger.warning("Hygieia Artifact Publish: to" + url);
         HttpClient client = getHttpClient();
         PostMethod post = new PostMethod(url);
         JSONObject json = new JSONObject();
@@ -75,13 +75,13 @@ public class DefaultHygieiaService implements HygieiaService {
             int responseCode = client.executeMethod(post);
             String response = post.getResponseBodyAsString();
             if (responseCode != HttpStatus.SC_CREATED) {
-                logger.log(Level.WARNING, "Hygieia Build Publisher post may have failed. Response: " + response);
+                logger.log(Level.SEVERE, "Hygieia: Build Publisher post may have failed. Response: " + response);
                 result = false;
             } else {
-                logger.info(response.toString());
+                logger.info("Hygieia: Build Data Published: Build Object ID:" + response);
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error posting to Hygieia", e);
+            logger.log(Level.SEVERE, "Hygieia: Error posting to Hygieia", e);
             result = false;
         } finally {
             post.releaseConnection();
