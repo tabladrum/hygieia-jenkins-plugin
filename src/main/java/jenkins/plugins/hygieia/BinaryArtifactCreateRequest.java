@@ -2,6 +2,7 @@ package jenkins.plugins.hygieia;
 
 public class BinaryArtifactCreateRequest {
     private String artifactName;
+    private String canonicalName;
     private String artifactGroup;
     private String artifactVersion;
     private String buildId;
@@ -34,6 +35,14 @@ public class BinaryArtifactCreateRequest {
 
     public String getBuildId() {
         return buildId;
+    }
+
+    public String getCanonicalName() {
+        return canonicalName;
+    }
+
+    public void setCanonicalName(String cannonicalName) {
+        this.canonicalName = cannonicalName;
     }
 
     public void setBuildId(String buildId) {

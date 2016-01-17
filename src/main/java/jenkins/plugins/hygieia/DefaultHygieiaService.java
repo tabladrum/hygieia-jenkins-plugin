@@ -69,7 +69,7 @@ public class DefaultHygieiaService implements HygieiaService {
                     "UTF-8");
             post.setRequestEntity(requestEntity);
             int responseCode = client.executeMethod(post);
-            response = post.getResponseBodyAsString();
+            response = post.getResponseBodyAsString().replaceAll("\"","");
             if (responseCode != HttpStatus.SC_CREATED) {
                 logger.log(Level.SEVERE, "Hygieia: Build Publisher post may have failed. Response: " + response);
             } else {
@@ -95,6 +95,7 @@ public class DefaultHygieiaService implements HygieiaService {
 
         try {
             String jsonString = new String(HygieiaUtils.convertObjectToJsonBytes(request));
+            logger.info(jsonString);
             StringRequestEntity requestEntity = new StringRequestEntity(
                     jsonString,
                     "application/json",

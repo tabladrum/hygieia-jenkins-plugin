@@ -8,6 +8,7 @@ import hudson.model.Cause;
 import hudson.model.Hudson;
 import hudson.scm.ChangeLogSet;
 import hudson.scm.ChangeLogSet.Entry;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOCase;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 
@@ -56,11 +57,13 @@ public class ActiveNotifier implements FineGrainedNotifier {
 
     public void completed(AbstractBuild r) {
         if ((publisher.hygieiaBuild != null) && (publisher.hygieiaArtifact == null)) {
+            logger.info("Publishing Hygieia Build Data only");
             String response = getHygieiaService(r).publishBuildData(getBuildData(r, true));
         }
         if (publisher.hygieiaArtifact != null) {
+            logger.info("Publishing Hygieia Build & Artifact Data");
             String response1 = getHygieiaService(r).publishBuildData(getBuildData(r, true));
-            ArtifactBuilder builder = new ArtifactBuilder(r, publisher, response1);
+            ArtifactBuilder builder = new ArtifactBuilder(r, publisher, listener, response1);
 
             Set<BinaryArtifactCreateRequest> requests = builder.getArtifacts();
             for (BinaryArtifactCreateRequest bac : requests) {
@@ -119,14 +122,16 @@ public class ActiveNotifier implements FineGrainedNotifier {
     private static class ArtifactBuilder {
         AbstractBuild build;
         HygieiaPublisher publisher;
+        BuildListener listener;
         String buildId;
 
         Set<BinaryArtifactCreateRequest> artifacts = new HashSet<BinaryArtifactCreateRequest>();
 
-        public ArtifactBuilder(AbstractBuild build, HygieiaPublisher publisher, String buildId) {
+        public ArtifactBuilder(AbstractBuild build, HygieiaPublisher publisher, BuildListener listener, String buildId) {
             this.build = build;
             this.publisher = publisher;
             this.buildId = buildId;
+            this.listener = listener;
             buildArtifacts();
         }
 
@@ -135,8 +140,24 @@ public class ActiveNotifier implements FineGrainedNotifier {
             String filePattern = publisher.hygieiaArtifact.artifactName;
             String group = publisher.hygieiaArtifact.artifactGroup;
             String version = publisher.hygieiaArtifact.artifactVersion;
+            EnvVars env = null;
+            try {
+                env = build.getEnvironment(listener);
+            } catch (Exception e) {
+                listener.getLogger().println("Error retrieving environment vars: " + e.getMessage());
+                env = new EnvVars();
+            }
 
-            List<File> artifactFiles = getArtifactFiles(new File(directory), filePattern, new ArrayList<File>());
+            String path = env.expand("$WORKSPACE");;
+            if (directory.startsWith("/")) {
+                path = path + directory;
+            } else {
+                path = path + "/" + directory;
+            }
+
+            logger.info(path);
+
+            List<File> artifactFiles = getArtifactFiles(new File(path), filePattern, new ArrayList<File>());
 
             for (File f : artifactFiles) {
                 BinaryArtifactCreateRequest bac = new BinaryArtifactCreateRequest();
@@ -146,11 +167,23 @@ public class ActiveNotifier implements FineGrainedNotifier {
                     version = guessVersionNumber(f.getName());
                 }
                 bac.setArtifactVersion(version);
-                bac.setArtifactName(f.getName());
+                bac.setCanonicalName(f.getName());
+                bac.setArtifactName(getFileNameMinusVersion(f,version));
                 bac.setTimestamp(build.getTimeInMillis());
                 bac.setBuildId(buildId);
                 artifacts.add(bac);
             }
+        }
+
+        private static String getFileNameMinusVersion (File file, String version) {
+            String ext = FilenameUtils.getExtension(file.getName());
+            if ("".equals(version)) return file.getName();
+            int vIndex = file.getName().indexOf(version);
+            if (vIndex == 0) return file.getName();
+            if ((file.getName().charAt(vIndex - 1) == '-')||(file.getName().charAt(vIndex - 1) == '_')) {
+                vIndex = vIndex - 1;
+            }
+            return file.getName().substring(0,vIndex) + "." + ext;
         }
 
         private String guessVersionNumber(String source) {
@@ -169,7 +202,7 @@ public class ActiveNotifier implements FineGrainedNotifier {
 
         private List<File> getArtifactFiles(File rootDirectory, String pattern, List<File> results) {
             FileFilter filter = new WildcardFileFilter(pattern.replace("**", "*"), IOCase.SYSTEM);
-
+            logger.info("In getArtifactFiles, rootDirectory=" + rootDirectory.getAbsolutePath());
             File[] temp = rootDirectory.listFiles(filter);
             if ((temp != null) && (temp.length > 0)) {
                 results.addAll(Arrays.asList(temp));
