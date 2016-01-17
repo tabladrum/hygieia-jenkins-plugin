@@ -78,6 +78,12 @@
             https://bugs.launchpad.net/ubuntu/+source/libjna-java/+bug/1065253
         -->
         <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.4</version>
+        </dependency>
+
+        <dependency>
             <groupId>net.java.dev.jna</groupId>
             <artifactId>jna</artifactId>
             <version>3.2.2</version>

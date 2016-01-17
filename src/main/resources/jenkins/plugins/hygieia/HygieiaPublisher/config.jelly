@@ -1,14 +1,31 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
          xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-    <f:entry title="Notify Build Status">
-        <f:checkbox name="hygieiaNotifyBuildStatus" value="true" checked="${instance.getHygieiaNotifyBuildStatus()}"/>
-    </f:entry>
 
-    <f:entry title="Notify Build Artifact Status">
-        <f:checkbox name="hygieiaNotifyBuildArtifactStatus" value="true" checked="${instance.getHygieiaNotifyBuildArtifactStatus()}"/>
-    </f:entry>
+   <f:optionalBlock name="hygieiaBuild" title="Publish Build Status" checked="${instance.hygieiaBuild != null}">
+        <f:entry>
+            <f:checkbox name="publishBuildStart" title="Publish Build Start Status" value="true" checked="${instance.hygieiaBuild.publishBuildStart}"/>
+        </f:entry>
+   </f:optionalBlock>
 
-    <f:entry title="Include Test Data">
-            <f:checkbox name="includeHygieiaTestSummary" value="true" checked="${instance.getIncludeHygieiaTestSummary()}"/>
-    </f:entry>
+    <f:optionalBlock name="hygieiaArtifact" title="Publish Build and Artifact" checked="${instance.hygieiaArtifact != null}">
+            <f:entry title="Artifact Directory" >
+                <f:textbox name="artifactDirectory" value="${instance.hygieiaArtifact.artifactDirectory}"/>
+            </f:entry>
+            <f:entry title="Artifact File Name Pattern" >
+                <f:textbox name="artifactName" value="${instance.hygieiaArtifact.artifactName}"/>
+            </f:entry>
+            <f:entry title="Artifact Group" >
+                 <f:textbox name="artifactGroup" value="${instance.hygieiaArtifact.artifactGroup}"/>
+            </f:entry>
+            <f:entry title="Artifact Version" >
+                <f:textbox name="artifactVersion" value="${instance.hygieiaArtifact.artifactVersion}"/>
+            </f:entry>
+
+    </f:optionalBlock>
+
+    <f:optionalBlock name="hygieiaTest" title="Publish Test Results" checked="${instance.hygieiaTest != null}">
+            <f:entry>
+                <f:checkbox name="publishTestStart" title="Publish Build Start Status"  value="true" checked="${instance.hygieiaTest.publishTestStart}"/>
+           </f:entry>
+     </f:optionalBlock>
  </j:jelly>

@@ -15,8 +15,9 @@ import java.util.Collection;
 public class HygieiaPublisherTest extends TestCase {
 
     private HygieiaPublisherStub.DescriptorImplStub descriptor;
-    private HygieiaServiceStub slackServiceStub;
-    private boolean response;
+    private HygieiaServiceStub hygieiaServiceStub;
+    private boolean responseBoolean;
+    private String responseString;
     private FormValidation.Kind expectedResult;
 
     @Before
@@ -25,9 +26,10 @@ public class HygieiaPublisherTest extends TestCase {
         descriptor = new HygieiaPublisherStub.DescriptorImplStub();
     }
 
-    public HygieiaPublisherTest(HygieiaServiceStub slackServiceStub, boolean response, FormValidation.Kind expectedResult) {
-        this.slackServiceStub = slackServiceStub;
-        this.response = response;
+    public HygieiaPublisherTest(HygieiaServiceStub hygieiaServiceStub, boolean responseBoolean, FormValidation.Kind expectedResult) {
+        this.hygieiaServiceStub = hygieiaServiceStub;
+        this.responseBoolean = responseBoolean;
+//        this.responseString = responseString;
         this.expectedResult = expectedResult;
     }
 
@@ -42,10 +44,11 @@ public class HygieiaPublisherTest extends TestCase {
 
     @Test
     public void testDoTestConnection() {
-        if (slackServiceStub != null) {
-            slackServiceStub.setResponse(response);
+        if (hygieiaServiceStub != null) {
+            hygieiaServiceStub.setResponse(responseBoolean);
+            hygieiaServiceStub.setResponseString(responseString);
         }
-        descriptor.setHygieiaService(slackServiceStub);
+        descriptor.setHygieiaService(hygieiaServiceStub);
         try {
             FormValidation result = descriptor.doTestConnection("hygieaUrl", "authToken");
             assertEquals(result.kind, expectedResult);
@@ -57,27 +60,31 @@ public class HygieiaPublisherTest extends TestCase {
 
     public static class HygieiaServiceStub implements HygieiaService {
 
-        private boolean response;
+        private boolean responseBoolean;
+        private String responseString;
 
 
         public void setResponse(boolean response) {
-            this.response = response;
+            this.responseBoolean = response;
+        }
+        public void setResponseString(String response) {
+            this.responseString = response;
         }
 
-        public boolean publishBuildData(BuildDataCreateRequest request) {
-            return response;
+        public String publishBuildData(BuildDataCreateRequest request) {
+            return responseString;
         }
 
-        public boolean publishArtifactData(BinaryArtifactCreateRequest request) {
-            return response;
+        public String publishArtifactData(BinaryArtifactCreateRequest request) {
+            return responseString;
         }
 
         public boolean testConnection() {
-            return response;
+            return responseBoolean;
         }
 
         public boolean publishTestResults() {
-            return response;
+            return responseBoolean;
         }
     }
 }

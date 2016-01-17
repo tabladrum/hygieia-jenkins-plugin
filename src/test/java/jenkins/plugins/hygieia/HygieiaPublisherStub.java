@@ -2,8 +2,8 @@ package jenkins.plugins.hygieia;
 
 public class HygieiaPublisherStub extends HygieiaPublisher {
 
-    public HygieiaPublisherStub(String host, String authToken, boolean hygieiaNotifyBuildStatus, boolean includeHygieiaTestSummary, boolean hygieiaNotifyBuildArtifactStatus) {
-        super(host, authToken, hygieiaNotifyBuildStatus, includeHygieiaTestSummary, hygieiaNotifyBuildArtifactStatus);
+    public HygieiaPublisherStub(HygieiaBuild buildStub, HygieiaTest testStub, HygieiaArtifactStub artifactStub) {
+        super(buildStub, testStub, artifactStub);
     }
 
     public static class DescriptorImplStub extends HygieiaPublisher.DescriptorImpl {
@@ -15,12 +15,30 @@ public class HygieiaPublisherStub extends HygieiaPublisher {
         }
 
         @Override
-        HygieiaService getHygieiaService(final String teamDomain, final String authToken) {
+        HygieiaService getHygieiaService(final String host, final String authToken) {
             return hygieiaService;
         }
 
         public void setHygieiaService(HygieiaService hygieiaService) {
             this.hygieiaService = hygieiaService;
+        }
+    }
+
+    public static class HygieiaArtifactStub extends HygieiaArtifact {
+        public HygieiaArtifactStub (String artifactDirectory, String artifactName, String artifactGroup, String artifactVersion ) {
+            super(artifactDirectory, artifactName, artifactGroup, artifactVersion);
+        }
+    }
+
+    public static class HygieiaBuildStub extends HygieiaBuild {
+        public HygieiaBuildStub (boolean publishBuildStart ) {
+            super(publishBuildStart);
+        }
+    }
+
+    public static class HygieiaTestStub extends HygieiaTest {
+        public HygieiaTestStub (boolean publishTestStart) {
+            super(publishTestStart);
         }
     }
 }

@@ -24,50 +24,58 @@ public class HygieiaPublisher extends Notifier {
 
     private static final Logger logger = Logger.getLogger(HygieiaPublisher.class.getName());
 
-    private String hygieiaAPIUrl;
-    private String hygieiaToken;
-
-    private boolean hygieiaNotifyBuildStatus;
-    private boolean hygieiaNotifyBuildArtifactStatus;
-    private boolean includeHygieiaTestSummary;
+    public final HygieiaBuild hygieiaBuild;
+    public final HygieiaTest hygieiaTest;
+    public final HygieiaArtifact hygieiaArtifact;
 
     @Override
     public DescriptorImpl getDescriptor() {
         return (DescriptorImpl) super.getDescriptor();
     }
 
-    public String getHygieiaAPIUrl() {
-        return hygieiaAPIUrl;
+
+    public boolean isHygieiaNotifyBuildArtifactStatus() {
+        return hygieiaArtifact != null;
     }
 
-    public String getHygieiaToken() {
-        return hygieiaToken;
+    public static class HygieiaArtifact {
+        public final String artifactName;
+        public final String artifactDirectory;
+        public final String artifactGroup;
+        public final String artifactVersion;
+
+        @DataBoundConstructor
+        public HygieiaArtifact(String artifactDirectory, String artifactName, String artifactGroup, String artifactVersion) {
+            this.artifactDirectory = artifactDirectory;
+            this.artifactName = artifactName;
+            this.artifactGroup = artifactGroup;
+            this.artifactVersion = artifactVersion;
+        }
     }
 
-    public boolean getHygieiaNotifyBuildStatus() {
-        return hygieiaNotifyBuildStatus;
+    public static class HygieiaBuild {
+        public final boolean publishBuildStart;
+        @DataBoundConstructor
+        public HygieiaBuild (boolean publishBuildStart) {
+            this.publishBuildStart = publishBuildStart;
+        }
     }
 
-    public boolean getHygieiaNotifyBuildArtifactStatus() {
-        return hygieiaNotifyBuildArtifactStatus;
+    public static class HygieiaTest {
+        public final boolean publishTestStart;
+        @DataBoundConstructor
+        public HygieiaTest (boolean publishTestStart) {
+            this.publishTestStart = publishTestStart;
+        }
     }
-
-    public boolean getIncludeHygieiaTestSummary() {
-        return includeHygieiaTestSummary;
-    }
-
-
 
     @DataBoundConstructor
-    public HygieiaPublisher(final String hygieiaAPIUrl, final String hygieiaToken, final boolean hygieiaNotifyBuildStatus,
-                            final boolean includeHygieiaTestSummary, final boolean hygieiaNotifyBuildArtifactStatus) {
+    public HygieiaPublisher(final HygieiaBuild hygieiaBuild,
+                            final HygieiaTest hygieiaTest, final HygieiaArtifact hygieiaArtifact) {
         super();
-        this.hygieiaAPIUrl = hygieiaAPIUrl;
-        this.hygieiaToken = hygieiaToken;
-        this.hygieiaNotifyBuildStatus = hygieiaNotifyBuildStatus;
-        this.includeHygieiaTestSummary = includeHygieiaTestSummary;
-        this.hygieiaNotifyBuildArtifactStatus = hygieiaNotifyBuildArtifactStatus;
-        logger.info("Publisher constructor:" + hygieiaAPIUrl + hygieiaToken + hygieiaNotifyBuildStatus + includeHygieiaTestSummary+hygieiaNotifyBuildArtifactStatus);
+        this.hygieiaBuild = hygieiaBuild;
+        this.hygieiaTest = hygieiaTest;
+        this.hygieiaArtifact = hygieiaArtifact;
     }
 
     public BuildStepMonitor getRequiredMonitorService() {
@@ -75,15 +83,8 @@ public class HygieiaPublisher extends Notifier {
     }
 
     public HygieiaService newHygieiaService(AbstractBuild r, BuildListener listener) {
-        String hygieiaAPIUrl = this.hygieiaAPIUrl;
-        if (StringUtils.isEmpty(hygieiaAPIUrl)) {
-            hygieiaAPIUrl = getDescriptor().getHygieiaAPIUrl();
-        }
-        String hygieiaToken = this.hygieiaToken;
-        if (StringUtils.isEmpty(hygieiaToken)) {
-            hygieiaToken = getDescriptor().getHygieiaToken();
-        }
-
+        String hygieiaAPIUrl = getDescriptor().getHygieiaAPIUrl();
+        String hygieiaToken = getDescriptor().getHygieiaToken();
         EnvVars env = null;
         try {
             env = r.getEnvironment(listener);
@@ -93,7 +94,6 @@ public class HygieiaPublisher extends Notifier {
         }
         hygieiaAPIUrl = env.expand(hygieiaAPIUrl);
         hygieiaToken = env.expand(hygieiaToken);
-        listener.getLogger().println("Hygieia url=" + hygieiaAPIUrl);
         return new DefaultHygieiaService(hygieiaAPIUrl, hygieiaToken);
     }
 
@@ -101,33 +101,19 @@ public class HygieiaPublisher extends Notifier {
     public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
         return true;
     }
-//
-//    @Override
-//    public boolean prebuild(AbstractBuild<?, ?> build, BuildListener listener) {
-//        if (hygieiaNotifyBuildStatus) {
-//            Map<Descriptor<Publisher>, Publisher> map = build.getProject().getPublishersList().toMap();
-//            for (Publisher publisher : map.values()) {
-//                if (publisher instanceof HygieiaPublisher) {
-//                    logger.info("Invoking Started...");
-//                    new ActiveNotifier((HygieiaPublisher) publisher, listener).started(build);
-//                }
-//            }
-//        }
-//        return super.prebuild(build, listener);
-//    }
+
 
     @Extension
     public static class DescriptorImpl extends BuildStepDescriptor<Publisher> {
 
         private String hygieiaAPIUrl;
         private String hygieiaToken;
-        private boolean hygieiaNotifyBuildStatus;
-        private boolean includeHygieiaTestSummary;
-        private boolean hygieiaNotifyBuildArtifactStatus;
+
 
         public DescriptorImpl() {
-           load();
+            load();
         }
+
 
         public String getHygieiaAPIUrl() {
             return hygieiaAPIUrl;
@@ -137,29 +123,6 @@ public class HygieiaPublisher extends Notifier {
             return hygieiaToken;
         }
 
-        public boolean getHygieiaNotifyBuildStatus() {
-            return hygieiaNotifyBuildStatus;
-        }
-
-        public void setHygieiaNotifyBuildStatus(boolean hygieiaNotifyBuildStatus) {
-            this.hygieiaNotifyBuildStatus = hygieiaNotifyBuildStatus;
-        }
-
-        public boolean getIncludeHygieiaTestSummary() {
-            return includeHygieiaTestSummary;
-        }
-
-        public void setIncludeHygieiaTestSummary(boolean includeHygieiaTestSummary) {
-            this.includeHygieiaTestSummary = includeHygieiaTestSummary;
-        }
-
-        public boolean getHygieiaNotifyBuildArtifactStatus() {
-            return hygieiaNotifyBuildArtifactStatus;
-        }
-
-        public void setHygieiaNotifyBuildArtifactStatus(boolean hygieiaNotifyBuildArtifactStatus) {
-            this.hygieiaNotifyBuildArtifactStatus = hygieiaNotifyBuildArtifactStatus;
-        }
 
         public boolean isApplicable(Class<? extends AbstractProject> aClass) {
             return true;
@@ -167,14 +130,12 @@ public class HygieiaPublisher extends Notifier {
 
         @Override
         public HygieiaPublisher newInstance(StaplerRequest sr, JSONObject json) {
-            String hygieiaAPIUrl = sr.getParameter("hygieiaAPIUrl");
-            String hygieiaToken = sr.getParameter("hygieiaToken");
 
-            boolean hygieiaNotifyBuildStatus = "true".equals(sr.getParameter("hygieiaNotifyBuildStatus"));
-            boolean hygieiaNotifyBuildArtifactStatus = "true".equals(sr.getParameter("hygieiaNotifyBuildArtifactStatus"));
-            boolean includeHygieiaTestSummary = "true".equals(sr.getParameter("includeHygieiaTestSummary"));
-            return new HygieiaPublisher(hygieiaAPIUrl, hygieiaToken, hygieiaNotifyBuildStatus, hygieiaNotifyBuildArtifactStatus,
-                    includeHygieiaTestSummary);
+            HygieiaBuild hygieiaBuild = sr.bindJSON(HygieiaBuild.class, (JSONObject) json.get("hygieiaBuild"));
+            HygieiaArtifact hygieiaArtifact = sr.bindJSON(HygieiaArtifact.class, (JSONObject) json.get("hygieiaArtifact"));
+            HygieiaTest hygieiaTest = sr.bindJSON(HygieiaTest.class, (JSONObject) json.get("hygieiaTest"));
+            logger.info(json.toString());
+            return new HygieiaPublisher(hygieiaBuild, hygieiaTest, hygieiaArtifact);
         }
 
         @Override

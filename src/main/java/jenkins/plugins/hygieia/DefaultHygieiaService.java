@@ -41,9 +41,6 @@ public class DefaultHygieiaService implements HygieiaService {
                 // Consider it to be passed if username specified. Sufficient?
                 if (username != null && !"".equals(username.trim())) {
                     logger.info("Using proxy authentication (user=" + username + ")");
-                    // http://hc.apache.org/httpclient-3.x/authentication.html#Proxy_Authentication
-                    // and
-                    // http://svn.apache.org/viewvc/httpcomponents/oac.hc3x/trunk/src/examples/BasicAuthenticationExample.java?view=markup
                     client.getState().setProxyCredentials(AuthScope.ANY,
                             new UsernamePasswordCredentials(username, password));
                 }
@@ -57,13 +54,12 @@ public class DefaultHygieiaService implements HygieiaService {
     }
 
 
-    public boolean publishBuildData(BuildDataCreateRequest request) {
-        boolean result = true;
+    public String publishBuildData(BuildDataCreateRequest request) {
+        String response;
 
         String url = hygieiaAPIUrl + "/build";
         HttpClient client = getHttpClient();
         PostMethod post = new PostMethod(url);
-        JSONObject json = new JSONObject();
 
         try {
             String jsonString = new String(HygieiaUtils.convertObjectToJsonBytes(request));
@@ -73,25 +69,24 @@ public class DefaultHygieiaService implements HygieiaService {
                     "UTF-8");
             post.setRequestEntity(requestEntity);
             int responseCode = client.executeMethod(post);
-            String response = post.getResponseBodyAsString();
+            response = post.getResponseBodyAsString();
             if (responseCode != HttpStatus.SC_CREATED) {
                 logger.log(Level.SEVERE, "Hygieia: Build Publisher post may have failed. Response: " + response);
-                result = false;
             } else {
                 logger.info("Hygieia: Build Data Published: Build Object ID:" + response);
             }
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Hygieia: Error posting to Hygieia", e);
-            result = false;
+            response = "";
         } finally {
             post.releaseConnection();
         }
 
-        return result;
+        return response;
     }
 
-    public boolean publishArtifactData(BinaryArtifactCreateRequest request) {
-        boolean result = true;
+    public String publishArtifactData(BinaryArtifactCreateRequest request) {
+        String response = "";
         String url = hygieiaAPIUrl + "/artifact";
         logger.warning("Hygieia Artifact Publish: to" + url);
         HttpClient client = getHttpClient();
@@ -104,22 +99,23 @@ public class DefaultHygieiaService implements HygieiaService {
                     jsonString,
                     "application/json",
                     "UTF-8");
+            post.setRequestEntity(requestEntity);
             int responseCode = client.executeMethod(post);
-            String response = post.getResponseBodyAsString();
+            response = post.getResponseBodyAsString();
             if (responseCode != HttpStatus.SC_CREATED) {
                 logger.log(Level.WARNING, "Hygieia Artifact Publisher post may have failed. Response: " + response);
-                result = false;
             } else {
                 logger.info(response.toString());
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, "Error posting to Hygieia", e);
-            result = false;
+            response = "";
         } finally {
             post.releaseConnection();
         }
-        return result;
+        return response;
     }
+
 
 
     public boolean testConnection() {

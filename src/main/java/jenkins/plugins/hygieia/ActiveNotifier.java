@@ -8,10 +8,18 @@ import hudson.model.Cause;
 import hudson.model.Hudson;
 import hudson.scm.ChangeLogSet;
 import hudson.scm.ChangeLogSet.Entry;
+import org.apache.commons.io.IOCase;
+import org.apache.commons.io.filefilter.WildcardFileFilter;
 
+import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 @SuppressWarnings("rawtypes")
@@ -19,23 +27,24 @@ public class ActiveNotifier implements FineGrainedNotifier {
 
     private static final Logger logger = Logger.getLogger(HygieiaListener.class.getName());
 
-    HygieiaPublisher notifier;
+    HygieiaPublisher publisher;
     BuildListener listener;
 
-    public ActiveNotifier(HygieiaPublisher notifier, BuildListener listener) {
+    public ActiveNotifier(HygieiaPublisher publisher, BuildListener listener) {
         super();
-        this.notifier = notifier;
+        this.publisher = publisher;
         this.listener = listener;
     }
 
     private HygieiaService getHygieiaService(AbstractBuild r) {
-        return notifier.newHygieiaService(r, listener);
+        return publisher.newHygieiaService(r, listener);
     }
 
     public void started(AbstractBuild r) {
-        if (notifier.getHygieiaNotifyBuildStatus()) {
+        if ((publisher.hygieiaBuild != null) && (publisher.hygieiaBuild.publishBuildStart)) {
             getHygieiaService(r).publishBuildData(getBuildData(r, false));
         }
+
     }
 
     public void deleted(AbstractBuild r) {
@@ -46,11 +55,25 @@ public class ActiveNotifier implements FineGrainedNotifier {
     }
 
     public void completed(AbstractBuild r) {
-        if (notifier.getHygieiaNotifyBuildStatus()) {
-            getHygieiaService(r).publishBuildData(getBuildData(r, true));
+        if ((publisher.hygieiaBuild != null) && (publisher.hygieiaArtifact == null)) {
+            String response = getHygieiaService(r).publishBuildData(getBuildData(r, true));
+        }
+        if (publisher.hygieiaArtifact != null) {
+            String response1 = getHygieiaService(r).publishBuildData(getBuildData(r, true));
+            ArtifactBuilder builder = new ArtifactBuilder(r, publisher, response1);
+
+            Set<BinaryArtifactCreateRequest> requests = builder.getArtifacts();
+            for (BinaryArtifactCreateRequest bac : requests) {
+                String response2 = getHygieiaService(r).publishArtifactData(bac);
+            }
         }
     }
 
+    private List<BinaryArtifactCreateRequest> getBuildArtifactCreateRequest() {
+        List<BinaryArtifactCreateRequest> request = new LinkedList<BinaryArtifactCreateRequest>();
+
+        return request;
+    }
 
     private BuildDataCreateRequest getBuildData(AbstractBuild r, boolean isComplete) {
         BuildDataCreateRequest request = new BuildDataCreateRequest();
@@ -61,7 +84,7 @@ public class ActiveNotifier implements FineGrainedNotifier {
         EnvVars env = null;
         try {
             env = r.getEnvironment(listener);
-        } catch (IOException  e) {
+        } catch (IOException e) {
             logger.warning("Error getting environment variables");
         } catch (InterruptedException e) {
             logger.warning("Error getting environment variables");
@@ -78,10 +101,6 @@ public class ActiveNotifier implements FineGrainedNotifier {
         request.setSourceChangeSet(getCommitList(r));
 
         if (isComplete) {
-            String artifactId = env.get("POM_ARTIFACTID");
-            String version = env.get("POM_VERSION");
-            logger.warning("ARTIFACT ID =" + artifactId + "-" + version);
-
             request.setBuildStatus(r.getResult().toString());
             request.setEndTime(r.getDuration());
             request.setDuration(r.getStartTimeInMillis() + r.getDuration());
@@ -97,6 +116,77 @@ public class ActiveNotifier implements FineGrainedNotifier {
         return commitBuilder.getCommits();
     }
 
+    private static class ArtifactBuilder {
+        AbstractBuild build;
+        HygieiaPublisher publisher;
+        String buildId;
+
+        Set<BinaryArtifactCreateRequest> artifacts = new HashSet<BinaryArtifactCreateRequest>();
+
+        public ArtifactBuilder(AbstractBuild build, HygieiaPublisher publisher, String buildId) {
+            this.build = build;
+            this.publisher = publisher;
+            this.buildId = buildId;
+            buildArtifacts();
+        }
+
+        private void buildArtifacts() {
+            String directory = publisher.hygieiaArtifact.artifactDirectory;
+            String filePattern = publisher.hygieiaArtifact.artifactName;
+            String group = publisher.hygieiaArtifact.artifactGroup;
+            String version = publisher.hygieiaArtifact.artifactVersion;
+
+            List<File> artifactFiles = getArtifactFiles(new File(directory), filePattern, new ArrayList<File>());
+
+            for (File f : artifactFiles) {
+                BinaryArtifactCreateRequest bac = new BinaryArtifactCreateRequest();
+                String v = "";
+                bac.setArtifactGroup(group);
+                if ("".equals(version)) {
+                    version = guessVersionNumber(f.getName());
+                }
+                bac.setArtifactVersion(version);
+                bac.setArtifactName(f.getName());
+                bac.setTimestamp(build.getTimeInMillis());
+                bac.setBuildId(buildId);
+                artifacts.add(bac);
+            }
+        }
+
+        private String guessVersionNumber(String source) {
+            String versionNumber = "";
+            String fileName = source.substring(0, source.lastIndexOf("."));
+            if (fileName.contains(".")) {
+                String majorVersion = fileName.substring(0, fileName.indexOf("."));
+                String minorVersion = fileName.substring(fileName.indexOf("."));
+                int delimiter = majorVersion.lastIndexOf("-");
+                if (majorVersion.indexOf("_") > delimiter) delimiter = majorVersion.indexOf("_");
+                majorVersion = majorVersion.substring(delimiter + 1, fileName.indexOf("."));
+                versionNumber = majorVersion + minorVersion;
+            }
+            return versionNumber;
+        }
+
+        private List<File> getArtifactFiles(File rootDirectory, String pattern, List<File> results) {
+            FileFilter filter = new WildcardFileFilter(pattern.replace("**", "*"), IOCase.SYSTEM);
+
+            File[] temp = rootDirectory.listFiles(filter);
+            if ((temp != null) && (temp.length > 0)) {
+                results.addAll(Arrays.asList(temp));
+            }
+
+            for (File currentItem : rootDirectory.listFiles()) {
+                if (currentItem.isDirectory()) {
+                    getArtifactFiles(currentItem, pattern, results);
+                }
+            }
+            return results;
+        }
+
+        public Set<BinaryArtifactCreateRequest> getArtifacts() {
+            return artifacts;
+        }
+    }
 
     private static class CommitBuilder {
         AbstractBuild build;
