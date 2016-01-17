@@ -11,9 +11,11 @@ public interface FineGrainedNotifier {
     void deleted(AbstractBuild r);
 
 //    @SuppressWarnings("rawtypes")
-//    void finalized(AbstractBuild r);
+    void finalized(AbstractBuild r);
 
     @SuppressWarnings("rawtypes")
     void completed(AbstractBuild r);
+
+    void aborted(AbstractBuild r);
 
 }

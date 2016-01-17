@@ -15,6 +15,10 @@ import org.apache.commons.io.filefilter.WildcardFileFilter;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -42,7 +46,8 @@ public class ActiveNotifier implements FineGrainedNotifier {
     }
 
     public void started(AbstractBuild r) {
-        if ((publisher.hygieiaBuild != null) && (publisher.hygieiaBuild.publishBuildStart)) {
+        if ((publisher.getHygieiaBuild() != null) && publisher.getHygieiaBuild().isPublishBuildStart()) {
+            listener.getLogger().println("Hygieia: Publishing Build Start Data.");
             getHygieiaService(r).publishBuildData(getBuildData(r, false));
         }
 
@@ -51,31 +56,39 @@ public class ActiveNotifier implements FineGrainedNotifier {
     public void deleted(AbstractBuild r) {
     }
 
+    public void aborted(AbstractBuild r) {
+        logger.warning("Publishing Hygieia Build Aborted");
+    }
 
     public void finalized(AbstractBuild r) {
+        //Careful: class variable listener is null here !!!!
+        if (r.getResult().toString().equalsIgnoreCase("aborted")) {//TBD: use jenkins contants.
+            String response = getHygieiaService(r).publishBuildData(getBuildData(r, true));
+            logger.warning("Hygieia: Publishing Hygieia for Build Aborted.");
+        }
     }
 
     public void completed(AbstractBuild r) {
-        if ((publisher.hygieiaBuild != null) && (publisher.hygieiaArtifact == null)) {
+        if ((publisher.getHygieiaBuild() != null) && (publisher.getHygieiaArtifact() == null)) {
             logger.info("Publishing Hygieia Build Data only");
             String response = getHygieiaService(r).publishBuildData(getBuildData(r, true));
+            listener.getLogger().println("Hygieia: Published Build Complete Data. Response=" + response);
         }
-        if (publisher.hygieiaArtifact != null) {
+
+        if (("success".equalsIgnoreCase(r.getResult().toString()) && (publisher.getHygieiaArtifact() != null))) {
             logger.info("Publishing Hygieia Build & Artifact Data");
             String response1 = getHygieiaService(r).publishBuildData(getBuildData(r, true));
+            listener.getLogger().println("Hygieia: Published Build Complete Data. Response=" + response1);
             ArtifactBuilder builder = new ArtifactBuilder(r, publisher, listener, response1);
 
             Set<BinaryArtifactCreateRequest> requests = builder.getArtifacts();
             for (BinaryArtifactCreateRequest bac : requests) {
                 String response2 = getHygieiaService(r).publishArtifactData(bac);
+                listener.getLogger().println("Hygieia: Published Build Complete Artifact Data. Filename=" +
+                        bac.getCanonicalName() + ", Name=" + bac.getArtifactName() + ", Version=" + bac.getArtifactVersion() +
+                        ", Group=" + bac.getArtifactGroup() + "Response=" + response2);
             }
         }
-    }
-
-    private List<BinaryArtifactCreateRequest> getBuildArtifactCreateRequest() {
-        List<BinaryArtifactCreateRequest> request = new LinkedList<BinaryArtifactCreateRequest>();
-
-        return request;
     }
 
     private BuildDataCreateRequest getBuildData(AbstractBuild r, boolean isComplete) {
@@ -105,8 +118,8 @@ public class ActiveNotifier implements FineGrainedNotifier {
 
         if (isComplete) {
             request.setBuildStatus(r.getResult().toString());
-            request.setEndTime(r.getDuration());
-            request.setDuration(r.getStartTimeInMillis() + r.getDuration());
+            request.setDuration(r.getDuration());
+            request.setEndTime(r.getStartTimeInMillis() + r.getDuration());
         } else {
             request.setBuildStatus("InProgress");
         }
@@ -136,10 +149,10 @@ public class ActiveNotifier implements FineGrainedNotifier {
         }
 
         private void buildArtifacts() {
-            String directory = publisher.hygieiaArtifact.artifactDirectory;
-            String filePattern = publisher.hygieiaArtifact.artifactName;
-            String group = publisher.hygieiaArtifact.artifactGroup;
-            String version = publisher.hygieiaArtifact.artifactVersion;
+            String directory = publisher.getHygieiaArtifact().getArtifactDirectory();
+            String filePattern = publisher.getHygieiaArtifact().getArtifactName();
+            String group = publisher.getHygieiaArtifact().getArtifactGroup();
+            String version = publisher.getHygieiaArtifact().getArtifactVersion();
             EnvVars env = null;
             try {
                 env = build.getEnvironment(listener);
@@ -148,7 +161,8 @@ public class ActiveNotifier implements FineGrainedNotifier {
                 env = new EnvVars();
             }
 
-            String path = env.expand("$WORKSPACE");;
+            String path = env.expand("$WORKSPACE");
+            ;
             if (directory.startsWith("/")) {
                 path = path + directory;
             } else {
@@ -168,22 +182,31 @@ public class ActiveNotifier implements FineGrainedNotifier {
                 }
                 bac.setArtifactVersion(version);
                 bac.setCanonicalName(f.getName());
-                bac.setArtifactName(getFileNameMinusVersion(f,version));
+                bac.setArtifactName(getFileNameMinusVersion(f, version));
                 bac.setTimestamp(build.getTimeInMillis());
                 bac.setBuildId(buildId);
                 artifacts.add(bac);
+                try {
+                    BasicFileAttributes att
+                            = Files.getFileAttributeView(Paths.get(f.getPath()), BasicFileAttributeView.class).readAttributes();
+                    listener.getLogger().println("Hygieia: Build Complete Artifact Data. Publishing file =" + f.getName() + ", Created="
+                            + att.creationTime());
+
+                } catch (IOException e) {
+                    listener.getLogger().println("Hygieia: Build Complete Artifact Data. Failed to get file attribute for" + f.getName());
+                }
             }
         }
 
-        private static String getFileNameMinusVersion (File file, String version) {
+        private static String getFileNameMinusVersion(File file, String version) {
             String ext = FilenameUtils.getExtension(file.getName());
             if ("".equals(version)) return file.getName();
             int vIndex = file.getName().indexOf(version);
             if (vIndex == 0) return file.getName();
-            if ((file.getName().charAt(vIndex - 1) == '-')||(file.getName().charAt(vIndex - 1) == '_')) {
+            if ((file.getName().charAt(vIndex - 1) == '-') || (file.getName().charAt(vIndex - 1) == '_')) {
                 vIndex = vIndex - 1;
             }
-            return file.getName().substring(0,vIndex) + "." + ext;
+            return file.getName().substring(0, vIndex) + "." + ext;
         }
 
         private String guessVersionNumber(String source) {

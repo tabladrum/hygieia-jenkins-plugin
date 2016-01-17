@@ -24,25 +24,44 @@ public class HygieiaPublisher extends Notifier {
 
     private static final Logger logger = Logger.getLogger(HygieiaPublisher.class.getName());
 
-    public final HygieiaBuild hygieiaBuild;
-    public final HygieiaTest hygieiaTest;
-    public final HygieiaArtifact hygieiaArtifact;
+    private HygieiaBuild hygieiaBuild;
+    private HygieiaTest hygieiaTest;
+    private HygieiaArtifact hygieiaArtifact;
 
     @Override
     public DescriptorImpl getDescriptor() {
         return (DescriptorImpl) super.getDescriptor();
     }
 
+    public HygieiaBuild getHygieiaBuild() {
+        return hygieiaBuild;
+    }
 
-    public boolean isHygieiaNotifyBuildArtifactStatus() {
-        return hygieiaArtifact != null;
+    public void setHygieiaBuild(HygieiaBuild hygieiaBuild) {
+        this.hygieiaBuild = hygieiaBuild;
+    }
+
+    public HygieiaTest getHygieiaTest() {
+        return hygieiaTest;
+    }
+
+    public void setHygieiaTest(HygieiaTest hygieiaTest) {
+        this.hygieiaTest = hygieiaTest;
+    }
+
+    public HygieiaArtifact getHygieiaArtifact() {
+        return hygieiaArtifact;
+    }
+
+    public void setHygieiaArtifact(HygieiaArtifact hygieiaArtifact) {
+        this.hygieiaArtifact = hygieiaArtifact;
     }
 
     public static class HygieiaArtifact {
-        public final String artifactName;
-        public final String artifactDirectory;
-        public final String artifactGroup;
-        public final String artifactVersion;
+        private String artifactName;
+        private String artifactDirectory;
+        private String artifactGroup;
+        private String artifactVersion;
 
         @DataBoundConstructor
         public HygieiaArtifact(String artifactDirectory, String artifactName, String artifactGroup, String artifactVersion) {
@@ -51,20 +70,52 @@ public class HygieiaPublisher extends Notifier {
             this.artifactGroup = artifactGroup;
             this.artifactVersion = artifactVersion;
         }
+
+        public String getArtifactName() {
+            return artifactName;
+        }
+
+        public String getArtifactDirectory() {
+            return artifactDirectory;
+        }
+
+        public String getArtifactGroup() {
+            return artifactGroup;
+        }
+
+        public String getArtifactVersion() {
+            return artifactVersion;
+        }
     }
 
     public static class HygieiaBuild {
-        public final boolean publishBuildStart;
+        private boolean publishBuildStart;
         @DataBoundConstructor
         public HygieiaBuild (boolean publishBuildStart) {
+            this.publishBuildStart = publishBuildStart;
+        }
+
+        public boolean isPublishBuildStart() {
+            return publishBuildStart;
+        }
+
+        public void setPublishBuildStart(boolean publishBuildStart) {
             this.publishBuildStart = publishBuildStart;
         }
     }
 
     public static class HygieiaTest {
-        public final boolean publishTestStart;
+        private boolean publishTestStart;
         @DataBoundConstructor
         public HygieiaTest (boolean publishTestStart) {
+            this.publishTestStart = publishTestStart;
+        }
+
+        public boolean isPublishTestStart() {
+            return publishTestStart;
+        }
+
+        public void setPublishTestStart(boolean publishTestStart) {
             this.publishTestStart = publishTestStart;
         }
     }
@@ -134,7 +185,6 @@ public class HygieiaPublisher extends Notifier {
             HygieiaBuild hygieiaBuild = sr.bindJSON(HygieiaBuild.class, (JSONObject) json.get("hygieiaBuild"));
             HygieiaArtifact hygieiaArtifact = sr.bindJSON(HygieiaArtifact.class, (JSONObject) json.get("hygieiaArtifact"));
             HygieiaTest hygieiaTest = sr.bindJSON(HygieiaTest.class, (JSONObject) json.get("hygieiaTest"));
-            logger.info(json.toString());
             return new HygieiaPublisher(hygieiaBuild, hygieiaTest, hygieiaArtifact);
         }
 

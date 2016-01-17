@@ -15,4 +15,8 @@ public class DisabledNotifier implements FineGrainedNotifier {
 
     public void completed(AbstractBuild r) {
     }
+
+    public void aborted(AbstractBuild r) {
+
+    }
 }

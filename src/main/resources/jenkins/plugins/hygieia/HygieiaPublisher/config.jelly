@@ -1,31 +1,31 @@
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
          xmlns:t="/lib/hudson" xmlns:f="/lib/form">
 
-   <f:optionalBlock name="hygieiaBuild" title="Publish Build Status" checked="${instance.hygieiaBuild != null}">
+   <f:optionalBlock name="hygieiaBuild" title="Publish Build Status" checked="${instance.getHygieiaBuild() != null}">
         <f:entry>
-            <f:checkbox name="publishBuildStart" title="Publish Build Start Status" value="true" checked="${instance.hygieiaBuild.publishBuildStart}"/>
+            <f:checkbox name="publishBuildStart" title="Publish Build Start Status" value="true" checked="${instance.getHygieiaBuild().isPublishBuildStart()}"/>
         </f:entry>
    </f:optionalBlock>
 
-    <f:optionalBlock name="hygieiaArtifact" title="Publish Build and Artifact" checked="${instance.hygieiaArtifact != null}">
+    <f:optionalBlock name="hygieiaArtifact" title="Publish Build and Artifact" checked="${instance.getHygieiaArtifact() != null}">
             <f:entry title="Artifact Directory" >
-                <f:textbox name="artifactDirectory" value="${instance.hygieiaArtifact.artifactDirectory}"/>
+                <f:textbox name="artifactDirectory" value="${instance.getHygieiaArtifact().getArtifactDirectory()}"/>
             </f:entry>
             <f:entry title="Artifact File Name Pattern" >
-                <f:textbox name="artifactName" value="${instance.hygieiaArtifact.artifactName}"/>
+                <f:textbox name="artifactName" value="${instance.getHygieiaArtifact().getArtifactName()}"/>
             </f:entry>
             <f:entry title="Artifact Group" >
-                 <f:textbox name="artifactGroup" value="${instance.hygieiaArtifact.artifactGroup}"/>
+                 <f:textbox name="artifactGroup" value="${instance.getHygieiaArtifact().getArtifactGroup()}"/>
             </f:entry>
             <f:entry title="Artifact Version" >
-                <f:textbox name="artifactVersion" value="${instance.hygieiaArtifact.artifactVersion}"/>
+                <f:textbox name="artifactVersion" value="${instance.getHygieiaArtifact().getArtifactVersion()}"/>
             </f:entry>
 
     </f:optionalBlock>
 
-    <f:optionalBlock name="hygieiaTest" title="Publish Test Results" checked="${instance.hygieiaTest != null}">
+    <f:optionalBlock name="hygieiaTest" title="Publish Test Results" checked="${instance.getHygieiaTest() != null}">
             <f:entry>
-                <f:checkbox name="publishTestStart" title="Publish Build Start Status"  value="true" checked="${instance.hygieiaTest.publishTestStart}"/>
+                <f:checkbox name="publishTestStart" title="Publish Build Start Status"  value="true" checked="${instance.getHygieiaTest().isPublishTestStart()}"/>
            </f:entry>
      </f:optionalBlock>
  </j:jelly>
