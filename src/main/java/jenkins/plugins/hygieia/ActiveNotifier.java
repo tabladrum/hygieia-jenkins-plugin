@@ -225,7 +225,6 @@ public class ActiveNotifier implements FineGrainedNotifier {
 
         private List<File> getArtifactFiles(File rootDirectory, String pattern, List<File> results) {
             FileFilter filter = new WildcardFileFilter(pattern.replace("**", "*"), IOCase.SYSTEM);
-            logger.info("In getArtifactFiles, rootDirectory=" + rootDirectory.getAbsolutePath());
             File[] temp = rootDirectory.listFiles(filter);
             if ((temp != null) && (temp.length > 0)) {
                 results.addAll(Arrays.asList(temp));
