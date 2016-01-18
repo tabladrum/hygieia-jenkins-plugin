@@ -36,14 +36,11 @@ public class HygieiaListener extends RunListener<AbstractBuild> {
 
     @Override
     public void onDeleted(AbstractBuild r) {
-        // getNotifier(r.getProject()).deleted(r);
-        // super.onDeleted(r);
     }
 
     @Override
     public void onFinalized(AbstractBuild r) {
-        getNotifier(r.getProject(), null).finalized(r);
-        super.onFinalized(r);
+
     }
 
     @SuppressWarnings("unchecked")

@@ -1,12 +1,8 @@
 package jenkins.plugins.hygieia;
 
-import hudson.ProxyConfiguration;
-import jenkins.model.Jenkins;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
-import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
@@ -25,22 +21,7 @@ public class RestCall {
     }
 
     private HttpClient getHttpClient() {
-        HttpClient client = new HttpClient();
-        if (Jenkins.getInstance() != null) {
-            ProxyConfiguration proxy = Jenkins.getInstance().proxy;
-            if (proxy != null) {
-                client.getHostConfiguration().setProxy(proxy.name, proxy.port);
-                String username = proxy.getUserName();
-                String password = proxy.getPassword();
-                // Consider it to be passed if username specified. Sufficient?
-                if (username != null && !"".equals(username.trim())) {
-                    logger.info("Using proxy authentication (user=" + username + ")");
-                    client.getState().setProxyCredentials(AuthScope.ANY,
-                            new UsernamePasswordCredentials(username, password));
-                }
-            }
-        }
-        return client;
+        return new HttpClient();
     }
 
 
@@ -90,7 +71,7 @@ public class RestCall {
     private String getResponseString(InputStream in) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         byte[] byteArray = new byte[1024];
-        int count = 0;
+        int count;
         while ((count = in.read(byteArray, 0, byteArray.length)) > 0) {
             outputStream.write(byteArray, 0, count);
         }

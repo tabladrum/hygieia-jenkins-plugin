@@ -16,6 +16,5 @@ public interface FineGrainedNotifier {
     @SuppressWarnings("rawtypes")
     void completed(AbstractBuild r);
 
-    void aborted(AbstractBuild r);
 
 }

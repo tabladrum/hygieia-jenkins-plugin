@@ -90,8 +90,9 @@ public class HygieiaPublisher extends Notifier {
 
     public static class HygieiaBuild {
         private boolean publishBuildStart;
+
         @DataBoundConstructor
-        public HygieiaBuild (boolean publishBuildStart) {
+        public HygieiaBuild(boolean publishBuildStart) {
             this.publishBuildStart = publishBuildStart;
         }
 
@@ -106,8 +107,9 @@ public class HygieiaPublisher extends Notifier {
 
     public static class HygieiaTest {
         private boolean publishTestStart;
+
         @DataBoundConstructor
-        public HygieiaTest (boolean publishTestStart) {
+        public HygieiaTest(boolean publishTestStart) {
             this.publishTestStart = publishTestStart;
         }
 
@@ -136,7 +138,7 @@ public class HygieiaPublisher extends Notifier {
     public HygieiaService newHygieiaService(AbstractBuild r, BuildListener listener) {
         String hygieiaAPIUrl = getDescriptor().getHygieiaAPIUrl();
         String hygieiaToken = getDescriptor().getHygieiaToken();
-        EnvVars env = null;
+        EnvVars env;
         try {
             env = r.getEnvironment(listener);
         } catch (Exception e) {
@@ -145,6 +147,7 @@ public class HygieiaPublisher extends Notifier {
         }
         hygieiaAPIUrl = env.expand(hygieiaAPIUrl);
         hygieiaToken = env.expand(hygieiaToken);
+
         return new DefaultHygieiaService(hygieiaAPIUrl, hygieiaToken);
     }
 
@@ -159,7 +162,6 @@ public class HygieiaPublisher extends Notifier {
 
         private String hygieiaAPIUrl;
         private String hygieiaToken;
-
 
         public DescriptorImpl() {
             load();
@@ -207,21 +209,18 @@ public class HygieiaPublisher extends Notifier {
 
         public FormValidation doTestConnection(@QueryParameter("hygieiaAPIUrl") final String hygieiaAPIUrl,
                                                @QueryParameter("hygieiaToken") final String hygieiaToken) throws FormException {
-            try {
-                String hostUrl = hygieiaAPIUrl;
-                if (StringUtils.isEmpty(hostUrl)) {
-                    hostUrl = this.hygieiaAPIUrl;
-                }
-                String targetToken = hygieiaToken;
-                if (StringUtils.isEmpty(targetToken)) {
-                    targetToken = this.hygieiaToken;
-                }
-                HygieiaService testHygieiaService = getHygieiaService(hostUrl, targetToken);
-                boolean success = testHygieiaService.testConnection();
-                return success ? FormValidation.ok("Success") : FormValidation.error("Failure");
-            } catch (Exception e) {
-                return FormValidation.error("Client error : " + e.getMessage());
+
+            String hostUrl = hygieiaAPIUrl;
+            if (StringUtils.isEmpty(hostUrl)) {
+                hostUrl = this.hygieiaAPIUrl;
             }
+            String targetToken = hygieiaToken;
+            if (StringUtils.isEmpty(targetToken)) {
+                targetToken = this.hygieiaToken;
+            }
+            HygieiaService testHygieiaService = getHygieiaService(hostUrl, targetToken);
+            boolean success = testHygieiaService.testConnection();
+            return success ? FormValidation.ok("Success") : FormValidation.error("Failure");
         }
     }
 }

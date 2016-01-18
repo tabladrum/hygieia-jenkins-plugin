@@ -35,8 +35,6 @@ public class DefaultHygieiaService implements HygieiaService {
             response = callResponse.getResponseString().replaceAll("\"", "");
             if (responseCode != HttpStatus.SC_CREATED) {
                 logger.log(Level.SEVERE, "Hygieia: Build Publisher post may have failed. Response: " + response);
-            } else {
-                logger.info("Hygieia: Build Data Published: Build Object ID:" + response);
             }
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Hygieia: Error posting to Hygieia", e);
@@ -46,7 +44,7 @@ public class DefaultHygieiaService implements HygieiaService {
     }
 
     public String publishArtifactData(BinaryArtifactCreateRequest request) {
-        String response = "";
+        String response;
         try {
             String jsonString = new String(HygieiaUtils.convertObjectToJsonBytes(request));
             RestCall restCall = new RestCall();
@@ -55,8 +53,6 @@ public class DefaultHygieiaService implements HygieiaService {
             response = callResponse.getResponseString();
             if (responseCode != HttpStatus.SC_CREATED) {
                 logger.log(Level.WARNING, "Hygieia Artifact Publisher post may have failed. Response: " + response);
-            } else {
-                logger.info(response.toString());
             }
         } catch (IOException ioe) {
             logger.log(Level.WARNING, "Error posting to Hygieia", ioe);

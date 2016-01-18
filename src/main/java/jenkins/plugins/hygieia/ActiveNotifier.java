@@ -15,10 +15,6 @@ import org.apache.commons.io.filefilter.WildcardFileFilter;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributeView;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -46,9 +42,12 @@ public class ActiveNotifier implements FineGrainedNotifier {
     }
 
     public void started(AbstractBuild r) {
-        if ((publisher.getHygieiaBuild() != null) && publisher.getHygieiaBuild().isPublishBuildStart()) {
-            listener.getLogger().println("Hygieia: Publishing Build Start Data.");
-            getHygieiaService(r).publishBuildData(getBuildData(r, false));
+        boolean publish = (publisher.getHygieiaArtifact() != null) ||
+                ((publisher.getHygieiaBuild() != null) && publisher.getHygieiaBuild().isPublishBuildStart());
+
+        if (publish) {
+            String response = getHygieiaService(r).publishBuildData(getBuildData(r, false));
+            listener.getLogger().println("Hygieia: Published Build Start Data. Response=" + response);
         }
 
     }
@@ -56,31 +55,20 @@ public class ActiveNotifier implements FineGrainedNotifier {
     public void deleted(AbstractBuild r) {
     }
 
-    public void aborted(AbstractBuild r) {
-        logger.warning("Publishing Hygieia Build Aborted");
-    }
 
     public void finalized(AbstractBuild r) {
-        //Careful: class variable listener is null here !!!!
-        if (r.getResult().toString().equalsIgnoreCase("aborted")) {//TBD: use jenkins contants.
-            String response = getHygieiaService(r).publishBuildData(getBuildData(r, true));
-            logger.warning("Hygieia: Publishing Hygieia for Build Aborted.");
-        }
+
     }
 
     public void completed(AbstractBuild r) {
-        if ((publisher.getHygieiaBuild() != null) && (publisher.getHygieiaArtifact() == null)) {
-            logger.info("Publishing Hygieia Build Data only");
-            String response = getHygieiaService(r).publishBuildData(getBuildData(r, true));
-            listener.getLogger().println("Hygieia: Published Build Complete Data. Response=" + response);
-        }
+        String response = getHygieiaService(r).publishBuildData(getBuildData(r, true));
+        listener.getLogger().println("Hygieia: Published Build Complete Data. Response=" + response);
+        boolean publishArt = (publisher.getHygieiaArtifact() != null) &&
+                ("success".equalsIgnoreCase(r.getResult().toString()) ||
+                        "unstable".equalsIgnoreCase(r.getResult().toString()));
 
-        if (("success".equalsIgnoreCase(r.getResult().toString()) && (publisher.getHygieiaArtifact() != null))) {
-            logger.info("Publishing Hygieia Build & Artifact Data");
-            String response1 = getHygieiaService(r).publishBuildData(getBuildData(r, true));
-            listener.getLogger().println("Hygieia: Published Build Complete Data. Response=" + response1);
-            ArtifactBuilder builder = new ArtifactBuilder(r, publisher, listener, response1);
-
+        if (publishArt) {
+            ArtifactBuilder builder = new ArtifactBuilder(r, publisher, listener, response);
             Set<BinaryArtifactCreateRequest> requests = builder.getArtifacts();
             for (BinaryArtifactCreateRequest bac : requests) {
                 String response2 = getHygieiaService(r).publishArtifactData(bac);
@@ -153,7 +141,7 @@ public class ActiveNotifier implements FineGrainedNotifier {
             String filePattern = publisher.getHygieiaArtifact().getArtifactName();
             String group = publisher.getHygieiaArtifact().getArtifactGroup();
             String version = publisher.getHygieiaArtifact().getArtifactVersion();
-            EnvVars env = null;
+            EnvVars env;
             try {
                 env = build.getEnvironment(listener);
             } catch (Exception e) {
@@ -162,7 +150,7 @@ public class ActiveNotifier implements FineGrainedNotifier {
             }
 
             String path = env.expand("$WORKSPACE");
-            ;
+
             if (directory.startsWith("/")) {
                 path = path + directory;
             } else {
@@ -186,15 +174,6 @@ public class ActiveNotifier implements FineGrainedNotifier {
                 bac.setTimestamp(build.getTimeInMillis());
                 bac.setBuildId(buildId);
                 artifacts.add(bac);
-                try {
-                    BasicFileAttributes att
-                            = Files.getFileAttributeView(Paths.get(f.getPath()), BasicFileAttributeView.class).readAttributes();
-                    listener.getLogger().println("Hygieia: Build Complete Artifact Data. Publishing file =" + f.getName() + ", Created="
-                            + att.creationTime());
-
-                } catch (IOException e) {
-                    listener.getLogger().println("Hygieia: Build Complete Artifact Data. Failed to get file attribute for" + f.getName());
-                }
             }
         }
 
@@ -230,11 +209,14 @@ public class ActiveNotifier implements FineGrainedNotifier {
                 results.addAll(Arrays.asList(temp));
             }
 
-            for (File currentItem : rootDirectory.listFiles()) {
-                if (currentItem.isDirectory()) {
-                    getArtifactFiles(currentItem, pattern, results);
+            temp = rootDirectory.listFiles();
+            if ((temp != null) && (temp.length > 0))
+                for (File currentItem : rootDirectory.listFiles()) {
+                    if (currentItem.isDirectory()) {
+                        getArtifactFiles(currentItem, pattern, results);
+                    }
                 }
-            }
+
             return results;
         }
 
@@ -265,7 +247,7 @@ public class ActiveNotifier implements FineGrainedNotifier {
                     String upProjectName = c.getUpstreamProject();
                     int buildNumber = c.getUpstreamBuild();
                     AbstractProject project = Hudson.getInstance().getItemByFullName(upProjectName, AbstractProject.class);
-                    AbstractBuild upBuild = (AbstractBuild) project.getBuildByNumber(buildNumber);
+                    AbstractBuild upBuild = project.getBuildByNumber(buildNumber);
                     return getBuild(upBuild);
                 }
             }
