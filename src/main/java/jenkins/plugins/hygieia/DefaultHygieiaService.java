@@ -1,6 +1,8 @@
 package jenkins.plugins.hygieia;
 
-import groovy.transform.NotYetImplemented;
+import com.capitalone.dashboard.request.BuildDataCreateRequest;
+import com.capitalone.dashboard.request.TestDataCreateRequest;
+import hygieia.utils.HygieiaUtils;
 import org.apache.commons.httpclient.HttpStatus;
 
 import java.io.IOException;
@@ -61,6 +63,23 @@ public class DefaultHygieiaService implements HygieiaService {
         return response;
     }
 
+    public String publishTestResults(TestDataCreateRequest request) {
+        String response;
+        try {
+            String jsonString = new String(HygieiaUtils.convertObjectToJsonBytes(request));
+            RestCall restCall = new RestCall();
+            RestCall.RestCallResponse callResponse = restCall.makeRestCallPost(hygieiaAPIUrl + "/quality/test", jsonString);
+            int responseCode = callResponse.getResponseCode();
+            response = callResponse.getResponseString();
+            if (responseCode != HttpStatus.SC_CREATED) {
+                logger.log(Level.WARNING, "Hygieia Artifact Publisher post may have failed. Response: " + response);
+            }
+        } catch (IOException ioe) {
+            logger.log(Level.WARNING, "Error posting to Hygieia", ioe);
+            response = "";
+        }
+        return response;
+    }
 
     public boolean testConnection() {
         RestCall restCall = new RestCall();
@@ -72,10 +91,4 @@ public class DefaultHygieiaService implements HygieiaService {
         logger.log(Level.WARNING, "Hygieia Test Connection Failed. Response: " + responseCode);
         return false;
     }
-
-    @NotYetImplemented
-    public boolean publishTestResults() {
-        return false;
-    }
-
 }

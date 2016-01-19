@@ -1,24 +1,16 @@
 package jenkins.plugins.hygieia;
 
+import com.capitalone.dashboard.model.SCM;
+import com.capitalone.dashboard.request.BuildDataCreateRequest;
+import com.capitalone.dashboard.request.TestDataCreateRequest;
 import hudson.EnvVars;
 import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
-import hudson.model.Cause;
-import hudson.model.Hudson;
-import hudson.scm.ChangeLogSet;
-import hudson.scm.ChangeLogSet.Entry;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOCase;
-import org.apache.commons.io.filefilter.WildcardFileFilter;
+import hygieia.builder.ArtifactBuilder;
+import hygieia.builder.CommitBuilder;
+import hygieia.builder.CucumberTestBuilder;
 
-import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -43,7 +35,10 @@ public class ActiveNotifier implements FineGrainedNotifier {
 
     public void started(AbstractBuild r) {
         boolean publish = (publisher.getHygieiaArtifact() != null) ||
-                ((publisher.getHygieiaBuild() != null) && publisher.getHygieiaBuild().isPublishBuildStart());
+                ((publisher.getHygieiaBuild() != null) && publisher.getHygieiaBuild().isPublishBuildStart()) ||
+                ((publisher.getHygieiaTest() != null) && publisher.getHygieiaTest().isPublishTestStart());
+        ;
+
 
         if (publish) {
             String response = getHygieiaService(r).publishBuildData(getBuildData(r, false));
@@ -61,20 +56,39 @@ public class ActiveNotifier implements FineGrainedNotifier {
     }
 
     public void completed(AbstractBuild r) {
-        String response = getHygieiaService(r).publishBuildData(getBuildData(r, true));
-        listener.getLogger().println("Hygieia: Published Build Complete Data. Response=" + response);
-        boolean publishArt = (publisher.getHygieiaArtifact() != null) &&
-                ("success".equalsIgnoreCase(r.getResult().toString()) ||
-                        "unstable".equalsIgnoreCase(r.getResult().toString()));
+        boolean publishBuild = (publisher.getHygieiaArtifact() != null) ||
+                (publisher.getHygieiaBuild() != null) || (publisher.getHygieiaTest() != null);
 
-        if (publishArt) {
-            ArtifactBuilder builder = new ArtifactBuilder(r, publisher, listener, response);
-            Set<BinaryArtifactCreateRequest> requests = builder.getArtifacts();
-            for (BinaryArtifactCreateRequest bac : requests) {
-                String response2 = getHygieiaService(r).publishArtifactData(bac);
-                listener.getLogger().println("Hygieia: Published Build Complete Artifact Data. Filename=" +
-                        bac.getCanonicalName() + ", Name=" + bac.getArtifactName() + ", Version=" + bac.getArtifactVersion() +
-                        ", Group=" + bac.getArtifactGroup() + "Response=" + response2);
+        if (publishBuild) {
+            String response = getHygieiaService(r).publishBuildData(getBuildData(r, true));
+            listener.getLogger().println("Hygieia: Published Build Complete Data. Response=" + response);
+
+            boolean successBuild = ("success".equalsIgnoreCase(r.getResult().toString()) ||
+                    "unstable".equalsIgnoreCase(r.getResult().toString()));
+            boolean publishArt = (publisher.getHygieiaArtifact() != null) && successBuild;
+
+            if (publishArt) {
+                ArtifactBuilder builder = new ArtifactBuilder(r, publisher, listener, response);
+                Set<BinaryArtifactCreateRequest> requests = builder.getArtifacts();
+                for (BinaryArtifactCreateRequest bac : requests) {
+                    String response2 = getHygieiaService(r).publishArtifactData(bac);
+                    listener.getLogger().println("Hygieia: Published Build Complete Artifact Data. Filename=" +
+                            bac.getCanonicalName() + ", Name=" + bac.getArtifactName() + ", Version=" + bac.getArtifactVersion() +
+                            ", Group=" + bac.getArtifactGroup() + "Response=" + response2);
+                }
+            }
+
+            boolean publishTest = (publisher.getHygieiaTest() != null) && successBuild;
+
+            if (publishTest) {
+                CucumberTestBuilder builder = new CucumberTestBuilder(r, publisher, listener, response);
+                TestDataCreateRequest request = builder.getTestDataCreateRequest();
+                if (request != null) {
+                    String response3 = getHygieiaService(r).publishTestResults(request);
+                    listener.getLogger().println("Hygieia: Published Test Data. Response=" + response3);
+                } else {
+                    listener.getLogger().println("Hygieia: Published Test Data. Nothing to publish");
+                }
             }
         }
     }
@@ -119,179 +133,4 @@ public class ActiveNotifier implements FineGrainedNotifier {
         CommitBuilder commitBuilder = new CommitBuilder(r);
         return commitBuilder.getCommits();
     }
-
-    private static class ArtifactBuilder {
-        AbstractBuild build;
-        HygieiaPublisher publisher;
-        BuildListener listener;
-        String buildId;
-
-        Set<BinaryArtifactCreateRequest> artifacts = new HashSet<BinaryArtifactCreateRequest>();
-
-        public ArtifactBuilder(AbstractBuild build, HygieiaPublisher publisher, BuildListener listener, String buildId) {
-            this.build = build;
-            this.publisher = publisher;
-            this.buildId = buildId;
-            this.listener = listener;
-            buildArtifacts();
-        }
-
-        private void buildArtifacts() {
-            String directory = publisher.getHygieiaArtifact().getArtifactDirectory();
-            String filePattern = publisher.getHygieiaArtifact().getArtifactName();
-            String group = publisher.getHygieiaArtifact().getArtifactGroup();
-            String version = publisher.getHygieiaArtifact().getArtifactVersion();
-            EnvVars env;
-            try {
-                env = build.getEnvironment(listener);
-            } catch (Exception e) {
-                listener.getLogger().println("Error retrieving environment vars: " + e.getMessage());
-                env = new EnvVars();
-            }
-
-            String path = env.expand("$WORKSPACE");
-
-            if (directory.startsWith("/")) {
-                path = path + directory;
-            } else {
-                path = path + "/" + directory;
-            }
-
-            logger.info(path);
-
-            List<File> artifactFiles = getArtifactFiles(new File(path), filePattern, new ArrayList<File>());
-
-            for (File f : artifactFiles) {
-                BinaryArtifactCreateRequest bac = new BinaryArtifactCreateRequest();
-                String v = "";
-                bac.setArtifactGroup(group);
-                if ("".equals(version)) {
-                    version = guessVersionNumber(f.getName());
-                }
-                bac.setArtifactVersion(version);
-                bac.setCanonicalName(f.getName());
-                bac.setArtifactName(getFileNameMinusVersion(f, version));
-                bac.setTimestamp(build.getTimeInMillis());
-                bac.setBuildId(buildId);
-                artifacts.add(bac);
-            }
-        }
-
-        private static String getFileNameMinusVersion(File file, String version) {
-            String ext = FilenameUtils.getExtension(file.getName());
-            if ("".equals(version)) return file.getName();
-            int vIndex = file.getName().indexOf(version);
-            if (vIndex == 0) return file.getName();
-            if ((file.getName().charAt(vIndex - 1) == '-') || (file.getName().charAt(vIndex - 1) == '_')) {
-                vIndex = vIndex - 1;
-            }
-            return file.getName().substring(0, vIndex) + "." + ext;
-        }
-
-        private String guessVersionNumber(String source) {
-            String versionNumber = "";
-            String fileName = source.substring(0, source.lastIndexOf("."));
-            if (fileName.contains(".")) {
-                String majorVersion = fileName.substring(0, fileName.indexOf("."));
-                String minorVersion = fileName.substring(fileName.indexOf("."));
-                int delimiter = majorVersion.lastIndexOf("-");
-                if (majorVersion.indexOf("_") > delimiter) delimiter = majorVersion.indexOf("_");
-                majorVersion = majorVersion.substring(delimiter + 1, fileName.indexOf("."));
-                versionNumber = majorVersion + minorVersion;
-            }
-            return versionNumber;
-        }
-
-        private List<File> getArtifactFiles(File rootDirectory, String pattern, List<File> results) {
-            FileFilter filter = new WildcardFileFilter(pattern.replace("**", "*"), IOCase.SYSTEM);
-            File[] temp = rootDirectory.listFiles(filter);
-            if ((temp != null) && (temp.length > 0)) {
-                results.addAll(Arrays.asList(temp));
-            }
-
-            temp = rootDirectory.listFiles();
-            if ((temp != null) && (temp.length > 0))
-                for (File currentItem : rootDirectory.listFiles()) {
-                    if (currentItem.isDirectory()) {
-                        getArtifactFiles(currentItem, pattern, results);
-                    }
-                }
-
-            return results;
-        }
-
-        public Set<BinaryArtifactCreateRequest> getArtifacts() {
-            return artifacts;
-        }
-    }
-
-    private static class CommitBuilder {
-        AbstractBuild build;
-        private List<SCM> commitList = new LinkedList<SCM>();
-
-        public CommitBuilder(AbstractBuild build) {
-            this.build = getBuild(build);
-            buildCommits(build.getChangeSet());
-        }
-
-        private AbstractBuild getBuild(AbstractBuild build) {
-            ChangeLogSet changeSet = build.getChangeSet();
-            List<Entry> entries = new LinkedList<Entry>();
-            for (Object o : changeSet.getItems()) {
-                Entry entry = (Entry) o;
-                entries.add(entry);
-            }
-            if (entries.isEmpty()) {
-                Cause.UpstreamCause c = (Cause.UpstreamCause) build.getCause(Cause.UpstreamCause.class);
-                if (c != null) {
-                    String upProjectName = c.getUpstreamProject();
-                    int buildNumber = c.getUpstreamBuild();
-                    AbstractProject project = Hudson.getInstance().getItemByFullName(upProjectName, AbstractProject.class);
-                    AbstractBuild upBuild = project.getBuildByNumber(buildNumber);
-                    return getBuild(upBuild);
-                }
-            }
-            return build;
-        }
-
-        private void buildCommits(ChangeLogSet changeLogSet) {
-            for (Object o : changeLogSet.getItems()) {
-                Entry entry = (Entry) o;
-                SCM commit = new SCM();
-                if (entry.getAffectedFiles() != null) {
-                    commit.setNumberOfChanges(entry.getAffectedFiles().size());
-                } else {
-                    commit.setNumberOfChanges(0);
-                }
-                if (!"".equals(entry.getAuthor().getFullName())) {
-                    commit.setScmAuthor(entry.getAuthor().getFullName());
-                } else {
-                    commit.setScmAuthor(entry.getAuthor().getId());
-                }
-                commit.setScmCommitLog(entry.getMsg());
-                commit.setScmCommitTimestamp(entry.getTimestamp());
-                commit.setScmRevisionNumber(entry.getCommitId());
-                if (isNewCommit(commit)) {
-                    commitList.add(commit);
-                }
-                if ((entry.getParent() != null) && (!changeLogSet.equals(entry.getParent()))) {
-                    buildCommits(entry.getParent());
-                }
-            }
-        }
-
-        private boolean isNewCommit(SCM commit) {
-            for (SCM c : commitList) {
-                if (c.getScmRevisionNumber().equals(commit.getScmRevisionNumber())) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        public List<SCM> getCommits() {
-            return commitList;
-        }
-    }
-
 }

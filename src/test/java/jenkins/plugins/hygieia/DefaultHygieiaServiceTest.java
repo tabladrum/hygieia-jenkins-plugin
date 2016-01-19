@@ -1,5 +1,7 @@
 package jenkins.plugins.hygieia;
 
+import com.capitalone.dashboard.model.SCM;
+import com.capitalone.dashboard.request.BuildDataCreateRequest;
 import org.junit.Test;
 
 public class DefaultHygieiaServiceTest {

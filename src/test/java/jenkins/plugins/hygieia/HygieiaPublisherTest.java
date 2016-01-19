@@ -1,10 +1,12 @@
 package jenkins.plugins.hygieia;
 
+import com.capitalone.dashboard.request.BuildDataCreateRequest;
+import com.capitalone.dashboard.request.TestDataCreateRequest;
 import hudson.model.Descriptor;
 import hudson.util.FormValidation;
 import junit.framework.TestCase;
-import org.junit.Test;
 import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -83,8 +85,8 @@ public class HygieiaPublisherTest extends TestCase {
             return responseBoolean;
         }
 
-        public boolean publishTestResults() {
-            return responseBoolean;
+        public String publishTestResults(TestDataCreateRequest request) {
+            return responseString;
         }
     }
 }

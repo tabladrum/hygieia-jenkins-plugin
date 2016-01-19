@@ -1,5 +1,8 @@
 package jenkins.plugins.hygieia;
 
+import com.capitalone.dashboard.request.BuildDataCreateRequest;
+import com.capitalone.dashboard.request.TestDataCreateRequest;
+
 public interface HygieiaService {
     String publishBuildData(BuildDataCreateRequest request);
 
@@ -7,5 +10,5 @@ public interface HygieiaService {
 
     boolean testConnection();
 
-    boolean publishTestResults();
+    String publishTestResults(TestDataCreateRequest request);
 }

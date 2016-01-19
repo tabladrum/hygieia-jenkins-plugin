@@ -27,5 +27,11 @@
             <f:entry>
                 <f:checkbox name="publishTestStart" title="Publish Build Start Status"  value="true" checked="${instance.getHygieiaTest().isPublishTestStart()}"/>
            </f:entry>
+           <f:entry title="Results Directory" >
+                <f:textbox name="testResultsDirectory" value="${instance.getHygieiaTest().getTestResultsDirectory()}"/>
+           </f:entry>
+           <f:entry title="File Name Pattern" >
+                <f:textbox name="testFileNamePattern" value="${instance.getHygieiaTest().getTestFileNamePattern()}"/>
+           </f:entry>
      </f:optionalBlock>
  </j:jelly>

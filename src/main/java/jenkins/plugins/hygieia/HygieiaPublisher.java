@@ -107,10 +107,14 @@ public class HygieiaPublisher extends Notifier {
 
     public static class HygieiaTest {
         private boolean publishTestStart;
+        private String testFileNamePattern;
+        private String testResultsDirectory;
 
         @DataBoundConstructor
-        public HygieiaTest(boolean publishTestStart) {
+        public HygieiaTest(boolean publishTestStart, String testFileNamePattern, String testResultsDirectory) {
             this.publishTestStart = publishTestStart;
+            this.testFileNamePattern = testFileNamePattern;
+            this.testResultsDirectory = testResultsDirectory;
         }
 
         public boolean isPublishTestStart() {
@@ -119,6 +123,22 @@ public class HygieiaPublisher extends Notifier {
 
         public void setPublishTestStart(boolean publishTestStart) {
             this.publishTestStart = publishTestStart;
+        }
+
+        public String getTestFileNamePattern() {
+            return testFileNamePattern;
+        }
+
+        public void setTestFileNamePattern(String testFileNamePattern) {
+            this.testFileNamePattern = testFileNamePattern;
+        }
+
+        public String getTestResultsDirectory() {
+            return testResultsDirectory;
+        }
+
+        public void setTestResultsDirectory(String testResultsDirectory) {
+            this.testResultsDirectory = testResultsDirectory;
         }
     }
 
@@ -219,8 +239,12 @@ public class HygieiaPublisher extends Notifier {
                 targetToken = this.hygieiaToken;
             }
             HygieiaService testHygieiaService = getHygieiaService(hostUrl, targetToken);
-            boolean success = testHygieiaService.testConnection();
-            return success ? FormValidation.ok("Success") : FormValidation.error("Failure");
+            if (testHygieiaService != null) {
+                boolean success = testHygieiaService.testConnection();
+                return success ? FormValidation.ok("Success") : FormValidation.error("Failure");
+            } else {
+                return FormValidation.error("Failure");
+            }
         }
     }
 }
