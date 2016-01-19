@@ -1,10 +1,10 @@
 package hygieia.builder;
 
+import com.capitalone.dashboard.request.BinaryArtifactCreateRequest;
 import hudson.EnvVars;
 import hudson.model.AbstractBuild;
 import hudson.model.BuildListener;
 import hygieia.utils.HygieiaUtils;
-import jenkins.plugins.hygieia.BinaryArtifactCreateRequest;
 import jenkins.plugins.hygieia.HygieiaPublisher;
 import org.apache.commons.io.FilenameUtils;
 
@@ -70,6 +70,8 @@ public class ArtifactBuilder {
             bac.setArtifactName(getFileNameMinusVersion(f, version));
             bac.setTimestamp(build.getTimeInMillis());
             bac.setBuildId(buildId);
+            CommitBuilder commitBuilder = new CommitBuilder(build);
+            bac.getSourceChangeSet().addAll(commitBuilder.getCommits());
             artifacts.add(bac);
         }
     }

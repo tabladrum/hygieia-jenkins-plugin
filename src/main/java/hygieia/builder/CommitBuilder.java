@@ -56,7 +56,7 @@ public class CommitBuilder {
                 commit.setScmAuthor(entry.getAuthor().getId());
             }
             commit.setScmCommitLog(entry.getMsg());
-            commit.setScmCommitTimestamp(entry.getTimestamp());
+            commit.setScmCommitTimestamp(entry.getTimestamp()); //Timestamp will be -1 mostly per Jenkins documentation - as commits span over time.
             commit.setScmRevisionNumber(entry.getCommitId());
             if (isNewCommit(commit)) {
                 commitList.add(commit);
