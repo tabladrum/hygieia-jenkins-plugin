@@ -219,8 +219,12 @@ public class HygieiaPublisher extends Notifier {
                 targetToken = this.hygieiaToken;
             }
             HygieiaService testHygieiaService = getHygieiaService(hostUrl, targetToken);
-            boolean success = testHygieiaService.testConnection();
-            return success ? FormValidation.ok("Success") : FormValidation.error("Failure");
+            if (testHygieiaService != null) {
+                boolean success = testHygieiaService.testConnection();
+                return success ? FormValidation.ok("Success") : FormValidation.error("Failure");
+            } else {
+                return FormValidation.error("Failure");
+            }
         }
     }
 }
