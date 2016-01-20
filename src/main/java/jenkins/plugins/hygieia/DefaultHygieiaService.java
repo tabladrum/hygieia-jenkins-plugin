@@ -84,7 +84,7 @@ public class DefaultHygieiaService implements HygieiaService {
 
     public boolean testConnection() {
         RestCall restCall = new RestCall();
-        RestCall.RestCallResponse callResponse = restCall.makeRestCallGet(hygieiaAPIUrl + "/dashboard");
+        RestCall.RestCallResponse callResponse = restCall.makeRestCallGet(hygieiaAPIUrl + "/ping");
         int responseCode = callResponse.getResponseCode();
 
         if (responseCode == HttpStatus.SC_OK) return true;
