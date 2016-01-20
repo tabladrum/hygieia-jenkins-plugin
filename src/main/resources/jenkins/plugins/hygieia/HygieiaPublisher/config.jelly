@@ -27,6 +27,10 @@
             <f:entry>
                 <f:checkbox name="publishTestStart" title="Publish Build Start Status"  value="true" checked="${instance.getHygieiaTest().isPublishTestStart()}"/>
            </f:entry>
+            <f:entry field="testType" title="Test Type">
+             <f:select default="${instance.getHygieiaTest().getTestType()}" />
+            </f:entry>
+
            <f:entry title="Results Directory" >
                 <f:textbox name="testResultsDirectory" value="${instance.getHygieiaTest().getTestResultsDirectory()}"/>
            </f:entry>

@@ -1,5 +1,6 @@
 package jenkins.plugins.hygieia;
 
+import com.capitalone.dashboard.model.TestSuiteType;
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
@@ -11,6 +12,8 @@ import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Notifier;
 import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
+import hudson.util.ListBoxModel;
+import hygieia.transformer.HygieiaConstants;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -37,31 +40,21 @@ public class HygieiaPublisher extends Notifier {
         return hygieiaBuild;
     }
 
-    public void setHygieiaBuild(HygieiaBuild hygieiaBuild) {
-        this.hygieiaBuild = hygieiaBuild;
-    }
 
     public HygieiaTest getHygieiaTest() {
         return hygieiaTest;
-    }
-
-    public void setHygieiaTest(HygieiaTest hygieiaTest) {
-        this.hygieiaTest = hygieiaTest;
     }
 
     public HygieiaArtifact getHygieiaArtifact() {
         return hygieiaArtifact;
     }
 
-    public void setHygieiaArtifact(HygieiaArtifact hygieiaArtifact) {
-        this.hygieiaArtifact = hygieiaArtifact;
-    }
 
     public static class HygieiaArtifact {
-        private String artifactName;
-        private String artifactDirectory;
-        private String artifactGroup;
-        private String artifactVersion;
+        private final String artifactName;
+        private final String artifactDirectory;
+        private final String artifactGroup;
+        private final String artifactVersion;
 
         @DataBoundConstructor
         public HygieiaArtifact(String artifactDirectory, String artifactName, String artifactGroup, String artifactVersion) {
@@ -89,7 +82,7 @@ public class HygieiaPublisher extends Notifier {
     }
 
     public static class HygieiaBuild {
-        private boolean publishBuildStart;
+        private final boolean publishBuildStart;
 
         @DataBoundConstructor
         public HygieiaBuild(boolean publishBuildStart) {
@@ -100,46 +93,39 @@ public class HygieiaPublisher extends Notifier {
             return publishBuildStart;
         }
 
-        public void setPublishBuildStart(boolean publishBuildStart) {
-            this.publishBuildStart = publishBuildStart;
-        }
     }
 
     public static class HygieiaTest {
-        private boolean publishTestStart;
-        private String testFileNamePattern;
-        private String testResultsDirectory;
+        private final boolean publishTestStart;
+        private final String testFileNamePattern;
+        private final String testResultsDirectory;
+        private final String testType;
 
         @DataBoundConstructor
-        public HygieiaTest(boolean publishTestStart, String testFileNamePattern, String testResultsDirectory) {
+        public HygieiaTest(boolean publishTestStart, String testFileNamePattern, String testResultsDirectory, String testType) {
             this.publishTestStart = publishTestStart;
             this.testFileNamePattern = testFileNamePattern;
             this.testResultsDirectory = testResultsDirectory;
+            this.testType = testType;
         }
 
         public boolean isPublishTestStart() {
             return publishTestStart;
         }
 
-        public void setPublishTestStart(boolean publishTestStart) {
-            this.publishTestStart = publishTestStart;
-        }
-
         public String getTestFileNamePattern() {
             return testFileNamePattern;
         }
 
-        public void setTestFileNamePattern(String testFileNamePattern) {
-            this.testFileNamePattern = testFileNamePattern;
-        }
 
         public String getTestResultsDirectory() {
             return testResultsDirectory;
         }
 
-        public void setTestResultsDirectory(String testResultsDirectory) {
-            this.testResultsDirectory = testResultsDirectory;
+        public String getTestType() {
+            return testType;
         }
+
     }
 
     @DataBoundConstructor
@@ -197,6 +183,20 @@ public class HygieiaPublisher extends Notifier {
         }
 
 
+        public ListBoxModel doFillTestTypeItems(String testType) {
+            ListBoxModel model = new ListBoxModel();
+
+            model.add(HygieiaConstants.UNIT_TEST_DISPLAY, TestSuiteType.Unit.toString());
+            model.add(HygieiaConstants.INTEGRATION_TEST_DISPLAY, TestSuiteType.Integration.toString());
+            model.add(HygieiaConstants.FUNCTIONAL_TEST_DISPLAY, TestSuiteType.Functional.toString());
+            model.add(HygieiaConstants.REGRESSION_TEST_DISPLAY, TestSuiteType.Regression.toString());
+            model.add(HygieiaConstants.PERFORMANCE_TEST_DISPLAY, TestSuiteType.Performance.toString());
+            model.add(HygieiaConstants.SECURITY_TEST_DISPLAY, TestSuiteType.Security.toString());
+            return model;
+        }
+
+
+
         public boolean isApplicable(Class<? extends AbstractProject> aClass) {
             return true;
         }
@@ -207,6 +207,7 @@ public class HygieiaPublisher extends Notifier {
             HygieiaBuild hygieiaBuild = sr.bindJSON(HygieiaBuild.class, (JSONObject) json.get("hygieiaBuild"));
             HygieiaArtifact hygieiaArtifact = sr.bindJSON(HygieiaArtifact.class, (JSONObject) json.get("hygieiaArtifact"));
             HygieiaTest hygieiaTest = sr.bindJSON(HygieiaTest.class, (JSONObject) json.get("hygieiaTest"));
+            logger.info(json.toString());
             return new HygieiaPublisher(hygieiaBuild, hygieiaTest, hygieiaArtifact);
         }
 
