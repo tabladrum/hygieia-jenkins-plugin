@@ -9,7 +9,7 @@ Run unit tests
 
     mvn test
 
-Create an HPI file to install in Jenkins (HPI file will be in `target/hygieia-jenkins.hpi`).
+Create an HPI file to install in Jenkins (HPI file will be in `target/hygieia-publisher.hpi`).
 
     mvn clean package 
 
