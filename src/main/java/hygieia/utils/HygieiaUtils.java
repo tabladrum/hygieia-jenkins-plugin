@@ -11,10 +11,11 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Logger;
 
 
 public class HygieiaUtils {
-
+    private static final Logger logger = Logger.getLogger(HygieiaUtils.class.getName());
     public static final String APPLICATION_JSON_VALUE = "application/json";
 
     public static byte[] convertObjectToJsonBytes(Object object) throws IOException {
@@ -37,10 +38,11 @@ public class HygieiaUtils {
                     getArtifactFiles(currentItem, pattern, results);
                 }
             }
+
         return results;
     }
 
     public static List<File> getArtifactFiles(String rootDirectoryString, String pattern, List<File> results) {
-        return getArtifactFiles(new File (rootDirectoryString), pattern, results);
+        return getArtifactFiles(new File(rootDirectoryString), pattern, results);
     }
 }

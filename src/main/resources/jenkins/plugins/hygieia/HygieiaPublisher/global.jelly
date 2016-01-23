@@ -12,10 +12,10 @@
     so it should be straightforward to find them.
   -->
 <f:section title="Global Hygieia Publisher Settings" name="hygieia-jenkins">
-    <f:entry title="Integration Token" help="${rootURL}/plugin/hygieia-jenkins/help-globalConfig-slackToken.html">
+    <f:entry title="Integration Token" help="${rootURL}/plugin/hygieia-jenkins/help-globalConfig-hygieiaToken.html">
         <f:textbox field="hygieiaToken" name="hygieiaToken" value="${descriptor.getHygieiaToken()}" />
     </f:entry>
-    <f:entry title="Build Server URL" help="${rootURL}/plugin/hygieia-jenkins/help-globalConfig-slackBuildServerUrl.html">
+    <f:entry title="Build Server URL" help="${rootURL}/plugin/hygieia-jenkins/help-globalConfig-hygieiaBuildServerUrl.html">
         <f:textbox field="hygieiaAPIUrl" name="hygieiaAPIUrl" value="${descriptor.getHygieiaAPIUrl()}" />
     </f:entry>
     <f:validateButton

@@ -34,10 +34,10 @@ public class ArtifactBuilder {
     }
 
     private void buildArtifacts() {
-        String directory = publisher.getHygieiaArtifact().getArtifactDirectory();
-        String filePattern = publisher.getHygieiaArtifact().getArtifactName();
-        String group = publisher.getHygieiaArtifact().getArtifactGroup();
-        String version = publisher.getHygieiaArtifact().getArtifactVersion();
+        String directory = publisher.getHygieiaArtifact().getArtifactDirectory().trim();
+        String filePattern = publisher.getHygieiaArtifact().getArtifactName().trim();
+        String group = publisher.getHygieiaArtifact().getArtifactGroup().trim();
+        String version = publisher.getHygieiaArtifact().getArtifactVersion().trim();
         EnvVars env;
         try {
             env = build.getEnvironment(listener);
@@ -53,8 +53,6 @@ public class ArtifactBuilder {
         } else {
             path = path + "/" + directory;
         }
-
-        logger.info(path);
 
         List<File> artifactFiles = HygieiaUtils.getArtifactFiles(new File(path), filePattern, new ArrayList<File>());
 

@@ -44,8 +44,8 @@ public class CucumberTestBuilder {
     }
 
     private void buildTestResults() {
-        String directory = publisher.getHygieiaTest().getTestResultsDirectory();
-        String filePattern = publisher.getHygieiaTest().getTestFileNamePattern();
+        String directory = publisher.getHygieiaTest().getTestResultsDirectory().trim();
+        String filePattern = publisher.getHygieiaTest().getTestFileNamePattern().trim();
 
         EnvVars env;
         try {
@@ -62,7 +62,6 @@ public class CucumberTestBuilder {
         } else {
             path = path + "/" + directory;
         }
-
         List<File> testFiles = HygieiaUtils.getArtifactFiles(new File(path), filePattern, new ArrayList<File>());
         testResult = buildTestResultObject(getCapabilities(testFiles));
     }

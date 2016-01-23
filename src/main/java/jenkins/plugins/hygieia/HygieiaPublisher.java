@@ -20,6 +20,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
+import javax.servlet.ServletException;
 import java.io.IOException;
 import java.util.logging.Logger;
 
@@ -78,6 +79,11 @@ public class HygieiaPublisher extends Notifier {
 
         public String getArtifactVersion() {
             return artifactVersion;
+        }
+
+        public boolean checkFileds() {
+            if ("".equals(artifactName)) return false;
+            return true;
         }
     }
 
@@ -246,6 +252,13 @@ public class HygieiaPublisher extends Notifier {
             } else {
                 return FormValidation.error("Failure");
             }
+        }
+
+        public FormValidation doCheckValue(@QueryParameter String value) throws IOException, ServletException {
+            if(value.isEmpty()) {
+                return FormValidation.warning("You must fill this box!");
+            }
+            return FormValidation.ok();
         }
     }
 }
