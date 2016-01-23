@@ -1,9 +1,4 @@
-target/classes
-target/generated-sources
-target/hygieia-publisher
-target/inject-tests
-target/surefire-reports
-target/test-classes
+target
 .classpath
 .idea
 *.iml
