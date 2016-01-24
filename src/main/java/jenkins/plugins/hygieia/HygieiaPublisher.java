@@ -213,7 +213,6 @@ public class HygieiaPublisher extends Notifier {
             HygieiaBuild hygieiaBuild = sr.bindJSON(HygieiaBuild.class, (JSONObject) json.get("hygieiaBuild"));
             HygieiaArtifact hygieiaArtifact = sr.bindJSON(HygieiaArtifact.class, (JSONObject) json.get("hygieiaArtifact"));
             HygieiaTest hygieiaTest = sr.bindJSON(HygieiaTest.class, (JSONObject) json.get("hygieiaTest"));
-            logger.info(json.toString());
             return new HygieiaPublisher(hygieiaBuild, hygieiaTest, hygieiaArtifact);
         }
 
