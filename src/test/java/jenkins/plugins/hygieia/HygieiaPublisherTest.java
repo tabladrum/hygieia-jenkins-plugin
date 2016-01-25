@@ -2,6 +2,7 @@ package jenkins.plugins.hygieia;
 
 import com.capitalone.dashboard.request.BinaryArtifactCreateRequest;
 import com.capitalone.dashboard.request.BuildDataCreateRequest;
+import com.capitalone.dashboard.request.CodeQualityCreateRequest;
 import com.capitalone.dashboard.request.TestDataCreateRequest;
 import hudson.model.Descriptor;
 import hudson.util.FormValidation;
@@ -87,6 +88,10 @@ public class HygieiaPublisherTest extends TestCase {
         }
 
         public String publishTestResults(TestDataCreateRequest request) {
+            return responseString;
+        }
+
+        public String publishSonarResults(CodeQualityCreateRequest request) {
             return responseString;
         }
     }

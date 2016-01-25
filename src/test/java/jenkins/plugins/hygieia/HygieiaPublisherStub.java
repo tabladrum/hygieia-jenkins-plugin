@@ -2,8 +2,8 @@ package jenkins.plugins.hygieia;
 
 public class HygieiaPublisherStub extends HygieiaPublisher {
 
-    public HygieiaPublisherStub(HygieiaBuild buildStub, HygieiaTest testStub, HygieiaArtifactStub artifactStub) {
-        super(buildStub, testStub, artifactStub);
+    public HygieiaPublisherStub(HygieiaBuild buildStub, HygieiaTest testStub, HygieiaArtifactStub artifactStub, HygieiaSonar sonarStub) {
+        super(buildStub, testStub, artifactStub, sonarStub );
     }
 
     public static class DescriptorImplStub extends HygieiaPublisher.DescriptorImpl {

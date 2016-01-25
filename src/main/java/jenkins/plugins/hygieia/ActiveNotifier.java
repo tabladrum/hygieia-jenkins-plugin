@@ -3,6 +3,7 @@ package jenkins.plugins.hygieia;
 import com.capitalone.dashboard.model.SCM;
 import com.capitalone.dashboard.request.BinaryArtifactCreateRequest;
 import com.capitalone.dashboard.request.BuildDataCreateRequest;
+import com.capitalone.dashboard.request.CodeQualityCreateRequest;
 import com.capitalone.dashboard.request.TestDataCreateRequest;
 import hudson.EnvVars;
 import hudson.model.AbstractBuild;
@@ -10,8 +11,11 @@ import hudson.model.BuildListener;
 import hygieia.builder.ArtifactBuilder;
 import hygieia.builder.CommitBuilder;
 import hygieia.builder.CucumberTestBuilder;
+import hygieia.builder.SonarBuilder;
+import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -37,8 +41,8 @@ public class ActiveNotifier implements FineGrainedNotifier {
     public void started(AbstractBuild r) {
         boolean publish = (publisher.getHygieiaArtifact() != null) ||
                 ((publisher.getHygieiaBuild() != null) && publisher.getHygieiaBuild().isPublishBuildStart()) ||
-                ((publisher.getHygieiaTest() != null) && publisher.getHygieiaTest().isPublishTestStart());
-        ;
+                ((publisher.getHygieiaTest() != null) && publisher.getHygieiaTest().isPublishTestStart()) ||
+                ((publisher.getHygieiaSonar() != null) && publisher.getHygieiaSonar().isPublishBuildStart());
 
 
         if (publish) {
@@ -91,6 +95,28 @@ public class ActiveNotifier implements FineGrainedNotifier {
                     listener.getLogger().println("Hygieia: Published Test Data. Nothing to publish");
                 }
             }
+
+            boolean publishSonar = (publisher.getHygieiaSonar() != null) && successBuild;
+
+            if (publishSonar) {
+                try {
+                    SonarBuilder builder = new SonarBuilder(r, publisher, listener, response);
+                    CodeQualityCreateRequest request = builder.getSonarMetrics();
+                    if (request != null) {
+                        String response4 = getHygieiaService(r).publishSonarResults(request);
+                        listener.getLogger().println("Hygieia: Published Sonar Result. Response=" + response4);
+                    } else {
+                        listener.getLogger().println("Hygieia: Published Sonar Result. Nothing to publish");
+                    }
+                } catch (IOException e) {
+                    listener.getLogger().println("Hygieia: Publishing error" + '\n' + e.getMessage());
+                } catch (URISyntaxException e) {
+                    listener.getLogger().println("Hygieia: Publishing error" + '\n' + e.getMessage());
+                } catch (ParseException e) {
+                    listener.getLogger().println("Hygieia: Publishing error" + '\n' + e.getMessage());
+                }
+
+            }
         }
     }
 
@@ -126,7 +152,6 @@ public class ActiveNotifier implements FineGrainedNotifier {
         } else {
             request.setBuildStatus("InProgress");
         }
-
         return request;
     }
 
@@ -134,4 +159,5 @@ public class ActiveNotifier implements FineGrainedNotifier {
         CommitBuilder commitBuilder = new CommitBuilder(r);
         return commitBuilder.getCommits();
     }
+
 }

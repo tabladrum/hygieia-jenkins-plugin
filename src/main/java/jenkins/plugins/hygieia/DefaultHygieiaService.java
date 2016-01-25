@@ -2,6 +2,7 @@ package jenkins.plugins.hygieia;
 
 import com.capitalone.dashboard.request.BinaryArtifactCreateRequest;
 import com.capitalone.dashboard.request.BuildDataCreateRequest;
+import com.capitalone.dashboard.request.CodeQualityCreateRequest;
 import com.capitalone.dashboard.request.TestDataCreateRequest;
 import hygieia.utils.HygieiaUtils;
 import org.apache.commons.httpclient.HttpStatus;
@@ -74,6 +75,24 @@ public class DefaultHygieiaService implements HygieiaService {
             response = callResponse.getResponseString();
             if (responseCode != HttpStatus.SC_CREATED) {
                 logger.log(Level.WARNING, "Hygieia Artifact Publisher post may have failed. Response: " + response);
+            }
+        } catch (IOException ioe) {
+            logger.log(Level.WARNING, "Error posting to Hygieia", ioe);
+            response = "";
+        }
+        return response;
+    }
+
+    public String publishSonarResults(CodeQualityCreateRequest request) {
+        String response;
+        try {
+            String jsonString = new String(HygieiaUtils.convertObjectToJsonBytes(request));
+            RestCall restCall = new RestCall();
+            RestCall.RestCallResponse callResponse = restCall.makeRestCallPost(hygieiaAPIUrl + "/quality/static-analysis", jsonString);
+            int responseCode = callResponse.getResponseCode();
+            response = callResponse.getResponseString();
+            if (responseCode != HttpStatus.SC_CREATED) {
+                logger.log(Level.WARNING, "Hygieia Sonar Publisher post may have failed. Response: " + response);
             }
         } catch (IOException ioe) {
             logger.log(Level.WARNING, "Error posting to Hygieia", ioe);

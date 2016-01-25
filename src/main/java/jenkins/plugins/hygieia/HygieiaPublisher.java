@@ -31,6 +31,7 @@ public class HygieiaPublisher extends Notifier {
     private HygieiaBuild hygieiaBuild;
     private HygieiaTest hygieiaTest;
     private HygieiaArtifact hygieiaArtifact;
+    private HygieiaSonar hygieiaSonar;
 
     @Override
     public DescriptorImpl getDescriptor() {
@@ -50,6 +51,9 @@ public class HygieiaPublisher extends Notifier {
         return hygieiaArtifact;
     }
 
+    public HygieiaSonar getHygieiaSonar() {
+        return hygieiaSonar;
+    }
 
     public static class HygieiaArtifact {
         private final String artifactName;
@@ -101,6 +105,20 @@ public class HygieiaPublisher extends Notifier {
 
     }
 
+    public static class HygieiaSonar {
+        private final boolean publishBuildStart;
+
+        @DataBoundConstructor
+        public HygieiaSonar(boolean publishBuildStart) {
+            this.publishBuildStart = publishBuildStart;
+        }
+
+        public boolean isPublishBuildStart() {
+            return publishBuildStart;
+        }
+
+    }
+
     public static class HygieiaTest {
         private final boolean publishTestStart;
         private final String testFileNamePattern;
@@ -136,11 +154,12 @@ public class HygieiaPublisher extends Notifier {
 
     @DataBoundConstructor
     public HygieiaPublisher(final HygieiaBuild hygieiaBuild,
-                            final HygieiaTest hygieiaTest, final HygieiaArtifact hygieiaArtifact) {
+                            final HygieiaTest hygieiaTest, final HygieiaArtifact hygieiaArtifact, final HygieiaSonar hygieiaSonar) {
         super();
         this.hygieiaBuild = hygieiaBuild;
         this.hygieiaTest = hygieiaTest;
         this.hygieiaArtifact = hygieiaArtifact;
+        this.hygieiaSonar = hygieiaSonar;
     }
 
     public BuildStepMonitor getRequiredMonitorService() {
@@ -213,7 +232,8 @@ public class HygieiaPublisher extends Notifier {
             HygieiaBuild hygieiaBuild = sr.bindJSON(HygieiaBuild.class, (JSONObject) json.get("hygieiaBuild"));
             HygieiaArtifact hygieiaArtifact = sr.bindJSON(HygieiaArtifact.class, (JSONObject) json.get("hygieiaArtifact"));
             HygieiaTest hygieiaTest = sr.bindJSON(HygieiaTest.class, (JSONObject) json.get("hygieiaTest"));
-            return new HygieiaPublisher(hygieiaBuild, hygieiaTest, hygieiaArtifact);
+            HygieiaSonar hygieiaSonar = sr.bindJSON(HygieiaSonar.class, (JSONObject) json.get("hygieiaSonar"));
+            return new HygieiaPublisher(hygieiaBuild, hygieiaTest, hygieiaArtifact, hygieiaSonar);
         }
 
         @Override

@@ -31,6 +31,13 @@
 
     </f:optionalBlock>
 
+    <f:optionalBlock name="hygieiaSonar" title="Publish Sonar Analysis" checked="${instance.getHygieiaSonar() != null}"
+                     help="${rootURL}/plugin/hygieia-publisher/help-projectConfig-sendSonarInfo.html">
+        <f:entry>
+            <f:checkbox name="publishBuildStart" title="Publish Build Start Status" value="true" checked="${instance.getHygieiaSonar().isPublishBuildStart()}"/>
+        </f:entry>
+    </f:optionalBlock>
+
     <f:optionalBlock name="hygieiaTest" title="Publish Test Results" checked="${instance.getHygieiaTest() != null}"
     help="${rootURL}/plugin/hygieia-publisher/help-projectConfig-sendTestInfo.html">
             <f:entry>

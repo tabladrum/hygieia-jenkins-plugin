@@ -2,6 +2,7 @@ package jenkins.plugins.hygieia;
 
 import com.capitalone.dashboard.request.BinaryArtifactCreateRequest;
 import com.capitalone.dashboard.request.BuildDataCreateRequest;
+import com.capitalone.dashboard.request.CodeQualityCreateRequest;
 import com.capitalone.dashboard.request.TestDataCreateRequest;
 
 public interface HygieiaService {
@@ -12,4 +13,6 @@ public interface HygieiaService {
     boolean testConnection();
 
     String publishTestResults(TestDataCreateRequest request);
+
+    String publishSonarResults(CodeQualityCreateRequest request);
 }

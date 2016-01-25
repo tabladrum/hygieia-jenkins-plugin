@@ -140,7 +140,7 @@ public class CucumberTestBuilder {
             // There are test suites so let's construct a TestResult to encapsulate these results
             TestResult testResult = new TestResult();
             testResult.setType(TestSuiteType.fromString(publisher.getHygieiaTest().getTestType()));
-            testResult.setDescription(build.getFullDisplayName());
+            testResult.setDescription(build.getProject().getName());
             testResult.setExecutionId(String.valueOf(build.getNumber()));
             testResult.setUrl(build.getProject().getAbsoluteUrl() + String.valueOf(build.getNumber()) + "/");
             testResult.setDuration(build.getDuration());
