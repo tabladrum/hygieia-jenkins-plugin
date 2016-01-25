@@ -53,24 +53,29 @@ public class SonarBuilder {
     private String sonarProjectName;
     private String sonarProjectID;
     private String buildId;
+    private BuildListener listener;
 
     /**
      * Hide utility-class constructor.
      */
     public SonarBuilder(AbstractBuild<?, ?> build, HygieiaPublisher publisher, BuildListener listener, String buildId) throws IOException, URISyntaxException, ParseException {
+        this.listener = listener;
         setSonarDetails(build, buildId);
     }
 
     private void setSonarDetails(AbstractBuild build, String buildId) throws IOException, URISyntaxException, ParseException {
         String sonarBuildLink = extractSonarProjectURLFromLogs(build);
         this.buildId = buildId;
-        this.sonarProjectName = getSonarProjectName(sonarBuildLink);
-        this.sonarServer = sonarBuildLink.substring(0, sonarBuildLink.indexOf("/dashboard/index/" + this.sonarProjectName));
-        this.sonarProjectID = getSonarProjectID(this.sonarProjectName);
+        if (!StringUtils.isEmpty(sonarBuildLink)) {
+            this.sonarProjectName = getSonarProjectName(sonarBuildLink);
+            this.sonarServer = sonarBuildLink.substring(0, sonarBuildLink.indexOf("/dashboard/index/" + this.sonarProjectName));
+            this.sonarProjectID = getSonarProjectID(this.sonarProjectName);
+        }
 
     }
 
     public CodeQualityCreateRequest getSonarMetrics() throws ParseException {
+        if (StringUtils.isEmpty(sonarServer) || StringUtils.isEmpty(sonarProjectID)) return null;
         String url = String.format(sonarServer + URL_METRIC_FRAGMENT, sonarProjectID, METRICS);
         RestCall restCall = new RestCall();
         RestCall.RestCallResponse callResponse = restCall.makeRestCallGet(url);
@@ -79,7 +84,7 @@ public class SonarBuilder {
             String resp = callResponse.getResponseString();
             return buildQualityRequest(resp);
         }
-        logger.log(Level.WARNING, "Hygieia Sonar Connection Failed. Response: " + responseCode);
+        listener.getLogger().println("Hygieia Publisher: Sonar Connection Failed. Response: " + responseCode);
         return null;
     }
 

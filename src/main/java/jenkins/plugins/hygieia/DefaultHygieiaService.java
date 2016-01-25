@@ -38,12 +38,13 @@ public class DefaultHygieiaService implements HygieiaService {
             int responseCode = callResponse.getResponseCode();
             response = callResponse.getResponseString().replaceAll("\"", "");
             if (responseCode != HttpStatus.SC_CREATED) {
-                logger.log(Level.SEVERE, "Hygieia: Build Publisher post may have failed. Response: " + response);
+                logger.log(Level.SEVERE, "Hygieia: Build Publisher post may have failed. Response: " + responseCode);
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             logger.log(Level.SEVERE, "Hygieia: Error posting to Hygieia", e);
             response = "";
         }
+
         return response;
     }
 
@@ -56,7 +57,7 @@ public class DefaultHygieiaService implements HygieiaService {
             int responseCode = callResponse.getResponseCode();
             response = callResponse.getResponseString();
             if (responseCode != HttpStatus.SC_CREATED) {
-                logger.log(Level.WARNING, "Hygieia Artifact Publisher post may have failed. Response: " + response);
+                logger.log(Level.WARNING, "Hygieia Artifact Publisher post may have failed. Response: " + responseCode);
             }
         } catch (IOException ioe) {
             logger.log(Level.WARNING, "Error posting to Hygieia", ioe);
@@ -74,7 +75,7 @@ public class DefaultHygieiaService implements HygieiaService {
             int responseCode = callResponse.getResponseCode();
             response = callResponse.getResponseString();
             if (responseCode != HttpStatus.SC_CREATED) {
-                logger.log(Level.WARNING, "Hygieia Artifact Publisher post may have failed. Response: " + response);
+                logger.log(Level.WARNING, "Hygieia Artifact Publisher post may have failed. Response: " + responseCode);
             }
         } catch (IOException ioe) {
             logger.log(Level.WARNING, "Error posting to Hygieia", ioe);
@@ -92,7 +93,7 @@ public class DefaultHygieiaService implements HygieiaService {
             int responseCode = callResponse.getResponseCode();
             response = callResponse.getResponseString();
             if (responseCode != HttpStatus.SC_CREATED) {
-                logger.log(Level.WARNING, "Hygieia Sonar Publisher post may have failed. Response: " + response);
+                logger.log(Level.WARNING, "Hygieia Sonar Publisher post may have failed. Response: " + responseCode);
             }
         } catch (IOException ioe) {
             logger.log(Level.WARNING, "Error posting to Hygieia", ioe);
