@@ -217,6 +217,7 @@ public class CucumberTestBuilder {
             request.setTestJobName(build.getProject().getName());
             request.setTestJobUrl(build.getProject().getAbsoluteUrl());
             request.setTimestamp(testResult.getTimestamp());
+            request.setNiceName(publisher.getDescriptor().getHygieiaJenkinsName());
 
             request.setDescription(testResult.getDescription());
             request.setDuration(testResult.getDuration());

@@ -6,13 +6,13 @@ import com.capitalone.dashboard.request.CodeQualityCreateRequest;
 import com.capitalone.dashboard.request.TestDataCreateRequest;
 
 public interface HygieiaService {
-    String publishBuildData(BuildDataCreateRequest request);
+    HygieiaResponse publishBuildData(BuildDataCreateRequest request);
 
-    String publishArtifactData(BinaryArtifactCreateRequest request);
+    HygieiaResponse publishArtifactData(BinaryArtifactCreateRequest request);
 
     boolean testConnection();
 
-    String publishTestResults(TestDataCreateRequest request);
+    HygieiaResponse publishTestResults(TestDataCreateRequest request);
 
-    String publishSonarResults(CodeQualityCreateRequest request);
+    HygieiaResponse publishSonarResults(CodeQualityCreateRequest request);
 }

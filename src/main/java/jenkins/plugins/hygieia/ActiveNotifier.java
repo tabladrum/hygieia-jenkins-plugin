@@ -12,6 +12,7 @@ import hygieia.builder.ArtifactBuilder;
 import hygieia.builder.CommitBuilder;
 import hygieia.builder.CucumberTestBuilder;
 import hygieia.builder.SonarBuilder;
+import org.apache.commons.httpclient.HttpStatus;
 import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
@@ -46,8 +47,12 @@ public class ActiveNotifier implements FineGrainedNotifier {
 
 
         if (publish) {
-            String response = getHygieiaService(r).publishBuildData(getBuildData(r, false));
-            listener.getLogger().println("Hygieia: Published Build Start Data. Response=" + response);
+            HygieiaResponse response = getHygieiaService(r).publishBuildData(getBuildData(r, false));
+            if (response.getResponseCode() == HttpStatus.SC_CREATED) {
+                listener.getLogger().println("Hygieia: Published Build Complete Data. " + response.toString());
+            } else {
+                listener.getLogger().println("Hygieia: Failed Publishing Build Complete Data. " + response.toString());
+            }
         }
 
     }
@@ -65,32 +70,45 @@ public class ActiveNotifier implements FineGrainedNotifier {
                 (publisher.getHygieiaBuild() != null) || (publisher.getHygieiaTest() != null);
 
         if (publishBuild) {
-            String response = getHygieiaService(r).publishBuildData(getBuildData(r, true));
-            listener.getLogger().println("Hygieia: Published Build Complete Data. Response=" + response);
+            HygieiaResponse buildResponse = getHygieiaService(r).publishBuildData(getBuildData(r, true));
+            if (buildResponse.getResponseCode() == HttpStatus.SC_CREATED) {
+                listener.getLogger().println("Hygieia: Published Build Complete Data. " + buildResponse.toString());
+            } else {
+                listener.getLogger().println("Hygieia: Failed Publishing Build Complete Data. " + buildResponse.toString());
+            }
 
             boolean successBuild = ("success".equalsIgnoreCase(r.getResult().toString()) ||
                     "unstable".equalsIgnoreCase(r.getResult().toString()));
             boolean publishArt = (publisher.getHygieiaArtifact() != null) && successBuild;
 
             if (publishArt) {
-                ArtifactBuilder builder = new ArtifactBuilder(r, publisher, listener, response);
+                ArtifactBuilder builder = new ArtifactBuilder(r, publisher, listener, buildResponse.getResponseValue());
                 Set<BinaryArtifactCreateRequest> requests = builder.getArtifacts();
                 for (BinaryArtifactCreateRequest bac : requests) {
-                    String response2 = getHygieiaService(r).publishArtifactData(bac);
-                    listener.getLogger().println("Hygieia: Published Build Complete Artifact Data. Filename=" +
-                            bac.getCanonicalName() + ", Name=" + bac.getArtifactName() + ", Version=" + bac.getArtifactVersion() +
-                            ", Group=" + bac.getArtifactGroup() + "Response=" + response2);
+                    HygieiaResponse artifactResponse = getHygieiaService(r).publishArtifactData(bac);
+                    if (artifactResponse.getResponseCode() == HttpStatus.SC_CREATED) {
+                        listener.getLogger().println("Hygieia: Published Build Artifact Data. Filename=" +
+                                bac.getCanonicalName() + ", Name=" + bac.getArtifactName() + ", Version=" + bac.getArtifactVersion() +
+                                ", Group=" + bac.getArtifactGroup() + ". " + buildResponse.toString());
+                    } else {
+                        listener.getLogger().println("Hygieia: Failed Publishing Build Artifact Data. " + bac.getCanonicalName() + ", Name=" + bac.getArtifactName() + ", Version=" + bac.getArtifactVersion() +
+                                ", Group=" + bac.getArtifactGroup() + ". " + artifactResponse.toString());
+                    }
                 }
             }
 
             boolean publishTest = (publisher.getHygieiaTest() != null) && successBuild;
 
             if (publishTest) {
-                CucumberTestBuilder builder = new CucumberTestBuilder(r, publisher, listener, response);
+                CucumberTestBuilder builder = new CucumberTestBuilder(r, publisher, listener, buildResponse.getResponseValue());
                 TestDataCreateRequest request = builder.getTestDataCreateRequest();
                 if (request != null) {
-                    String response3 = getHygieiaService(r).publishTestResults(request);
-                    listener.getLogger().println("Hygieia: Published Test Data. Response=" + response3);
+                    HygieiaResponse testResponse = getHygieiaService(r).publishTestResults(request);
+                    if (testResponse.getResponseCode() == HttpStatus.SC_CREATED) {
+                        listener.getLogger().println("Hygieia: Published Test Data. " + testResponse.toString());
+                    } else {
+                        listener.getLogger().println("Hygieia: Failed Publishing Test Data. " + testResponse.toString());
+                    }
                 } else {
                     listener.getLogger().println("Hygieia: Published Test Data. Nothing to publish");
                 }
@@ -100,11 +118,15 @@ public class ActiveNotifier implements FineGrainedNotifier {
 
             if (publishSonar) {
                 try {
-                    SonarBuilder builder = new SonarBuilder(r, publisher, listener, response);
+                    SonarBuilder builder = new SonarBuilder(r, publisher, listener, buildResponse.getResponseValue());
                     CodeQualityCreateRequest request = builder.getSonarMetrics();
                     if (request != null) {
-                        String response4 = getHygieiaService(r).publishSonarResults(request);
-                        listener.getLogger().println("Hygieia: Published Sonar Result. Response=" + response4);
+                        HygieiaResponse sonarResponse = getHygieiaService(r).publishSonarResults(request);
+                        if (sonarResponse.getResponseCode() == HttpStatus.SC_CREATED) {
+                            listener.getLogger().println("Hygieia: Published Sonar Data. " + sonarResponse.toString());
+                        } else {
+                            listener.getLogger().println("Hygieia: Failed Publishing Sonar Data. " + sonarResponse.toString());
+                        }
                     } else {
                         listener.getLogger().println("Hygieia: Published Sonar Result. Nothing to publish");
                     }
@@ -122,6 +144,8 @@ public class ActiveNotifier implements FineGrainedNotifier {
 
     private BuildDataCreateRequest getBuildData(AbstractBuild r, boolean isComplete) {
         BuildDataCreateRequest request = new BuildDataCreateRequest();
+        request.setNiceName(publisher.getDescriptor().getHygieiaJenkinsName());
+        logger.info("NICE NAME=" + request.getNiceName());
         request.setJobName(r.getProject().getName());
         request.setBuildUrl(r.getProject().getAbsoluteUrl() + String.valueOf(r.getNumber()) + "/");
         request.setJobUrl(r.getProject().getAbsoluteUrl());

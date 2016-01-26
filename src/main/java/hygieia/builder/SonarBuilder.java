@@ -34,7 +34,7 @@ public class SonarBuilder {
     public static final String URL_PATTERN_IN_LOGS = ".*" + Pattern.quote("ANALYSIS SUCCESSFUL, you can browse ") + "(.*)";
     public static final String URL_PROJECT_ID_FRAGMENT = "/api/projects?format=json&key=%s";
     public static final String URL_METRIC_FRAGMENT = "/api/resources?format=json&resource=%s&metrics=%s&includealerts=true";
-    public static final String METRICS = "security-violations,ncloc,violations,critical_violations,major_violations,blocker_violations,violations_density,tests,test_success_density,test_errors,test_failures,coverage,code_coverage,sqale_index";
+    public static final String METRICS = "security-violations,ncloc,violations,critical_violations,major_violations,blocker_violations,violations_density,tests,test_success_density,test_errors,test_failures,coverage,line_coverage,sqale_index";
     private static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
     private static final String ID = "id";
     private static final String NAME = "name";
@@ -54,12 +54,14 @@ public class SonarBuilder {
     private String sonarProjectID;
     private String buildId;
     private BuildListener listener;
+    private HygieiaPublisher publisher;
 
     /**
      * Hide utility-class constructor.
      */
     public SonarBuilder(AbstractBuild<?, ?> build, HygieiaPublisher publisher, BuildListener listener, String buildId) throws IOException, URISyntaxException, ParseException {
         this.listener = listener;
+        this.publisher = publisher;
         setSonarDetails(build, buildId);
     }
 
@@ -95,6 +97,7 @@ public class SonarBuilder {
             CodeQualityCreateRequest codeQuality = new CodeQualityCreateRequest();
             codeQuality.setProjectName(str(prjData, NAME));
             codeQuality.setProjectUrl(sonarServer + "/dashboard/index/" + sonarProjectID);
+            codeQuality.setNiceName(publisher.getDescriptor().getHygieiaJenkinsName());
             codeQuality.setType(CodeQualityType.StaticAnalysis);
             codeQuality.setTimestamp(timestamp(prjData, DATE));
             codeQuality.setProjectVersion(str(prjData, VERSION));

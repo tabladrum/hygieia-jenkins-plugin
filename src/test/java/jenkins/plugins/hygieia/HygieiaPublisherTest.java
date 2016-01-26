@@ -21,7 +21,7 @@ public class HygieiaPublisherTest extends TestCase {
     private HygieiaPublisherStub.DescriptorImplStub descriptor;
     private HygieiaServiceStub hygieiaServiceStub;
     private boolean responseBoolean;
-    private String responseString;
+    private HygieiaResponse hygieiaResponse;
     private FormValidation.Kind expectedResult;
 
     @Before
@@ -47,14 +47,14 @@ public class HygieiaPublisherTest extends TestCase {
     }
 
     @Test
-    public void testDoTestConnection() {
+    public void testDoTestConnection() throws Exception {
         if (hygieiaServiceStub != null) {
             hygieiaServiceStub.setResponse(responseBoolean);
-            hygieiaServiceStub.setResponseString(responseString);
+            hygieiaServiceStub.setHygieiaResponse(hygieiaResponse);
         }
         descriptor.setHygieiaService(hygieiaServiceStub);
         try {
-            FormValidation result = descriptor.doTestConnection("hygieaUrl", "authToken");
+            FormValidation result = descriptor.doTestConnection("hygieaUrl", "authToken", "myname");
             assertEquals(result.kind, expectedResult);
         } catch (Descriptor.FormException e) {
             e.printStackTrace();
@@ -65,34 +65,39 @@ public class HygieiaPublisherTest extends TestCase {
     public static class HygieiaServiceStub implements HygieiaService {
 
         private boolean responseBoolean;
-        private String responseString;
+        private HygieiaResponse hygieiaResponse;
 
 
         public void setResponse(boolean response) {
             this.responseBoolean = response;
         }
-        public void setResponseString(String response) {
-            this.responseString = response;
+
+        public HygieiaResponse getHygieiaResponse() {
+            return hygieiaResponse;
         }
 
-        public String publishBuildData(BuildDataCreateRequest request) {
-            return responseString;
+        public void setHygieiaResponse(HygieiaResponse hygieiaResponse) {
+            this.hygieiaResponse = hygieiaResponse;
         }
 
-        public String publishArtifactData(BinaryArtifactCreateRequest request) {
-            return responseString;
+        public HygieiaResponse publishBuildData(BuildDataCreateRequest request) {
+            return hygieiaResponse;
+        }
+
+        public HygieiaResponse publishArtifactData(BinaryArtifactCreateRequest request) {
+            return hygieiaResponse;
         }
 
         public boolean testConnection() {
             return responseBoolean;
         }
 
-        public String publishTestResults(TestDataCreateRequest request) {
-            return responseString;
+        public HygieiaResponse publishTestResults(TestDataCreateRequest request) {
+            return hygieiaResponse;
         }
 
-        public String publishSonarResults(CodeQualityCreateRequest request) {
-            return responseString;
+        public HygieiaResponse publishSonarResults(CodeQualityCreateRequest request) {
+            return hygieiaResponse;
         }
     }
 }

@@ -86,8 +86,7 @@ public class HygieiaPublisher extends Notifier {
         }
 
         public boolean checkFileds() {
-            if ("".equals(artifactName)) return false;
-            return true;
+            return (!"".equals(artifactName));
         }
     }
 
@@ -169,6 +168,7 @@ public class HygieiaPublisher extends Notifier {
     public HygieiaService newHygieiaService(AbstractBuild r, BuildListener listener) {
         String hygieiaAPIUrl = getDescriptor().getHygieiaAPIUrl();
         String hygieiaToken = getDescriptor().getHygieiaToken();
+        String hygieiaJenkinsName = getDescriptor().getHygieiaJenkinsName();
         EnvVars env;
         try {
             env = r.getEnvironment(listener);
@@ -178,8 +178,9 @@ public class HygieiaPublisher extends Notifier {
         }
         hygieiaAPIUrl = env.expand(hygieiaAPIUrl);
         hygieiaToken = env.expand(hygieiaToken);
+        hygieiaJenkinsName = env.expand(hygieiaJenkinsName);
 
-        return new DefaultHygieiaService(hygieiaAPIUrl, hygieiaToken);
+        return new DefaultHygieiaService(hygieiaAPIUrl, hygieiaToken, hygieiaJenkinsName);
     }
 
     @Override
@@ -193,6 +194,7 @@ public class HygieiaPublisher extends Notifier {
 
         private String hygieiaAPIUrl;
         private String hygieiaToken;
+        private String hygieiaJenkinsName;
 
         public DescriptorImpl() {
             load();
@@ -207,6 +209,9 @@ public class HygieiaPublisher extends Notifier {
             return hygieiaToken;
         }
 
+        public String getHygieiaJenkinsName() {
+            return hygieiaJenkinsName;
+        }
 
         public ListBoxModel doFillTestTypeItems(String testType) {
             ListBoxModel model = new ListBoxModel();
@@ -240,12 +245,13 @@ public class HygieiaPublisher extends Notifier {
         public boolean configure(StaplerRequest sr, JSONObject formData) throws FormException {
             hygieiaAPIUrl = sr.getParameter("hygieiaAPIUrl");
             hygieiaToken = sr.getParameter("hygieiaToken");
+            hygieiaJenkinsName = sr.getParameter("hygieiaJenkinsName");
             save();
             return super.configure(sr, formData);
         }
 
-        HygieiaService getHygieiaService(final String hygieiaAPIUrl, final String hygieiaToken) {
-            return new DefaultHygieiaService(hygieiaAPIUrl, hygieiaToken);
+        HygieiaService getHygieiaService(final String hygieiaAPIUrl, final String hygieiaToken, final String hygieiaJenkinsName) {
+            return new DefaultHygieiaService(hygieiaAPIUrl, hygieiaToken, hygieiaJenkinsName);
         }
 
         @Override
@@ -254,7 +260,8 @@ public class HygieiaPublisher extends Notifier {
         }
 
         public FormValidation doTestConnection(@QueryParameter("hygieiaAPIUrl") final String hygieiaAPIUrl,
-                                               @QueryParameter("hygieiaToken") final String hygieiaToken) throws FormException {
+                                               @QueryParameter("hygieiaToken") final String hygieiaToken,
+                                               @QueryParameter("hygieiaJenkinsName") final String hygieiaJenkinsName) throws FormException {
 
             String hostUrl = hygieiaAPIUrl;
             if (StringUtils.isEmpty(hostUrl)) {
@@ -264,7 +271,11 @@ public class HygieiaPublisher extends Notifier {
             if (StringUtils.isEmpty(targetToken)) {
                 targetToken = this.hygieiaToken;
             }
-            HygieiaService testHygieiaService = getHygieiaService(hostUrl, targetToken);
+            String name = hygieiaJenkinsName;
+            if (StringUtils.isEmpty(name)) {
+                name = this.hygieiaToken;
+            }
+            HygieiaService testHygieiaService = getHygieiaService(hostUrl, targetToken, name);
             if (testHygieiaService != null) {
                 boolean success = testHygieiaService.testConnection();
                 return success ? FormValidation.ok("Success") : FormValidation.error("Failure");
