@@ -3,6 +3,7 @@ package jenkins.plugins.hygieia;
 import com.capitalone.dashboard.request.BinaryArtifactCreateRequest;
 import com.capitalone.dashboard.request.BuildDataCreateRequest;
 import com.capitalone.dashboard.request.CodeQualityCreateRequest;
+import com.capitalone.dashboard.request.DeployDataCreateRequest;
 import com.capitalone.dashboard.request.TestDataCreateRequest;
 import hudson.model.BuildListener;
 import hygieia.utils.HygieiaUtils;
@@ -108,6 +109,26 @@ public class DefaultHygieiaService implements HygieiaService {
             }
         } catch (IOException ioe) {
             logger.log(Level.WARNING, "Error posting to Hygieia", ioe);
+        }
+        return new HygieiaResponse(responseCode, responseValue);
+    }
+
+    public HygieiaResponse publishDeployData(DeployDataCreateRequest request) {
+        String responseValue;
+        int responseCode = HttpStatus.SC_NO_CONTENT;
+        try {
+            String jsonString = new String(HygieiaUtils.convertObjectToJsonBytes(request));
+            RestCall restCall = new RestCall();
+            RestCall.RestCallResponse callResponse = restCall.makeRestCallPost(hygieiaAPIUrl + "/deploy", jsonString);
+            responseCode = callResponse.getResponseCode();
+            responseValue = callResponse.getResponseString();
+            if (responseCode != HttpStatus.SC_CREATED) {
+                logger.log(Level.WARNING, "Hygieia Deploy post may have failed. Response: " + responseCode);
+            }
+            return new HygieiaResponse(responseCode, responseValue);
+        } catch (IOException ioe) {
+            logger.log(Level.WARNING, "Error posting to Hygieia", ioe);
+            responseValue = "";
         }
         return new HygieiaResponse(responseCode, responseValue);
     }

@@ -38,6 +38,44 @@
         </f:entry>
     </f:optionalBlock>
 
+    <f:optionalBlock name="hygieiaDeploy" title="Publish Deployment Results" checked="${instance.getHygieiaDeploy() != null}"
+                     help="${rootURL}/plugin/hygieia-publisher/help-projectConfig-sendDeployInfo.html">
+
+        <f:entry>
+            <f:checkbox name="publishDeployStart" title="Publish Deploy Start Status"  value="true"
+                        checked="${instance.getHygieiaDeploy().isPublishDeployStart()}"/>
+        </f:entry>
+        <f:entry title="Application Name" help="${rootURL}/plugin/hygieia-publisher/help-projectConfig-hygieiaApplicationName.html">
+            <f:textbox name="applicationName" value="${instance.getHygieiaDeploy().getApplicationName()}"
+                       checkUrl="'descriptorByName/jenkins.plugins.hygieia.HygieiaPublisher/checkValue?value='+this.value"/>
+        </f:entry>
+
+        <f:entry title="Environment Name" help="${rootURL}/plugin/hygieia-publisher/help-projectConfig-hygieiaEnvName.html">
+            <f:textbox name="environmentName" value="${instance.getHygieiaDeploy().getEnvironmentName()}"
+                       checkUrl="'descriptorByName/jenkins.plugins.hygieia.HygieiaPublisher/checkValue?value='+this.value"/>
+        </f:entry>
+
+        <f:entry title="Artifact Directory" help="${rootURL}/plugin/hygieia-publisher/help-projectConfig-filePath.html">
+            <f:textbox name="artifactDirectory" value="${instance.getHygieiaDeploy().getArtifactDirectory()}"
+                       checkUrl="'descriptorByName/jenkins.plugins.hygieia.HygieiaPublisher/checkValue?value='+this.value"/>
+        </f:entry>
+        <f:entry title="Artifact File Name Pattern" help="${rootURL}/plugin/hygieia-publisher/help-projectConfig-filePattern.html">
+            <f:textbox name="artifactName" value="${instance.getHygieiaDeploy().getArtifactName()}"
+                       checkUrl="'descriptorByName/jenkins.plugins.hygieia.HygieiaPublisher/checkValue?value='+this.value"
+                    />
+        </f:entry>
+        <f:entry title="Artifact Group" help="${rootURL}/plugin/hygieia-publisher/help-projectConfig-artifactGroup.html">
+            <f:textbox name="artifactGroup" value="${instance.getHygieiaDeploy().getArtifactGroup()}"
+                       checkUrl="'descriptorByName/jenkins.plugins.hygieia.HygieiaPublisher/checkValue?value='+this.value"
+                    />
+        </f:entry>
+        <f:entry title="Artifact Version" help="${rootURL}/plugin/hygieia-publisher/help-projectConfig-artifactVersion.html">
+        <f:textbox name="artifactVersion" value="${instance.getHygieiaDeploy().getArtifactVersion()}"
+                />
+        </f:entry>
+
+    </f:optionalBlock>
+
     <f:optionalBlock name="hygieiaTest" title="Publish Test Results" checked="${instance.getHygieiaTest() != null}"
     help="${rootURL}/plugin/hygieia-publisher/help-projectConfig-sendTestInfo.html">
             <f:entry>

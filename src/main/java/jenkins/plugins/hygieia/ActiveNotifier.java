@@ -4,6 +4,7 @@ import com.capitalone.dashboard.model.SCM;
 import com.capitalone.dashboard.request.BinaryArtifactCreateRequest;
 import com.capitalone.dashboard.request.BuildDataCreateRequest;
 import com.capitalone.dashboard.request.CodeQualityCreateRequest;
+import com.capitalone.dashboard.request.DeployDataCreateRequest;
 import com.capitalone.dashboard.request.TestDataCreateRequest;
 import hudson.EnvVars;
 import hudson.model.AbstractBuild;
@@ -11,6 +12,7 @@ import hudson.model.BuildListener;
 import hygieia.builder.ArtifactBuilder;
 import hygieia.builder.CommitBuilder;
 import hygieia.builder.CucumberTestBuilder;
+import hygieia.builder.DeployBuilder;
 import hygieia.builder.SonarBuilder;
 import org.apache.commons.httpclient.HttpStatus;
 import org.json.simple.parser.ParseException;
@@ -43,7 +45,8 @@ public class ActiveNotifier implements FineGrainedNotifier {
         boolean publish = (publisher.getHygieiaArtifact() != null) ||
                 ((publisher.getHygieiaBuild() != null) && publisher.getHygieiaBuild().isPublishBuildStart()) ||
                 ((publisher.getHygieiaTest() != null) && publisher.getHygieiaTest().isPublishTestStart()) ||
-                ((publisher.getHygieiaSonar() != null) && publisher.getHygieiaSonar().isPublishBuildStart());
+                ((publisher.getHygieiaSonar() != null) && publisher.getHygieiaSonar().isPublishBuildStart()) ||
+                ((publisher.getHygieiaDeploy() != null) && publisher.getHygieiaDeploy().isPublishDeployStart());
 
 
         if (publish) {
@@ -67,7 +70,7 @@ public class ActiveNotifier implements FineGrainedNotifier {
 
     public void completed(AbstractBuild r) {
         boolean publishBuild = (publisher.getHygieiaArtifact() != null) ||
-                (publisher.getHygieiaBuild() != null) || (publisher.getHygieiaTest() != null);
+                (publisher.getHygieiaBuild() != null) || (publisher.getHygieiaTest() != null) || (publisher.getHygieiaDeploy() != null);
 
         if (publishBuild) {
             HygieiaResponse buildResponse = getHygieiaService(r).publishBuildData(getBuildData(r, true));
@@ -89,7 +92,7 @@ public class ActiveNotifier implements FineGrainedNotifier {
                     if (artifactResponse.getResponseCode() == HttpStatus.SC_CREATED) {
                         listener.getLogger().println("Hygieia: Published Build Artifact Data. Filename=" +
                                 bac.getCanonicalName() + ", Name=" + bac.getArtifactName() + ", Version=" + bac.getArtifactVersion() +
-                                ", Group=" + bac.getArtifactGroup() + ". " + buildResponse.toString());
+                                ", Group=" + bac.getArtifactGroup() + ". " + artifactResponse.toString());
                     } else {
                         listener.getLogger().println("Hygieia: Failed Publishing Build Artifact Data. " + bac.getCanonicalName() + ", Name=" + bac.getArtifactName() + ", Version=" + bac.getArtifactVersion() +
                                 ", Group=" + bac.getArtifactGroup() + ". " + artifactResponse.toString());
@@ -139,13 +142,28 @@ public class ActiveNotifier implements FineGrainedNotifier {
                 }
 
             }
+
+            boolean publishDeploy = (publisher.getHygieiaDeploy() != null) && successBuild;
+            logger.info("Publish Deploy is =" + publishDeploy);
+            if (publishDeploy) {
+                DeployBuilder builder = new DeployBuilder(r, publisher, listener, buildResponse.getResponseValue());
+                Set<DeployDataCreateRequest> requests = builder.getDeploys();
+                for (DeployDataCreateRequest bac : requests) {
+                    logger.info(bac.getAppName());
+                    HygieiaResponse deployResponse = getHygieiaService(r).publishDeployData(bac);
+                    if (deployResponse.getResponseCode() == HttpStatus.SC_CREATED) {
+                        listener.getLogger().println("Hygieia: Published Deploy Data: " +  deployResponse.toString());
+                    } else {
+                        listener.getLogger().println("Hygieia: Failed Publishing Deploy Data:" + deployResponse.toString());
+                    }
+                }
+            }
         }
     }
 
     private BuildDataCreateRequest getBuildData(AbstractBuild r, boolean isComplete) {
         BuildDataCreateRequest request = new BuildDataCreateRequest();
         request.setNiceName(publisher.getDescriptor().getHygieiaJenkinsName());
-        logger.info("NICE NAME=" + request.getNiceName());
         request.setJobName(r.getProject().getName());
         request.setBuildUrl(r.getProject().getAbsoluteUrl() + String.valueOf(r.getNumber()) + "/");
         request.setJobUrl(r.getProject().getAbsoluteUrl());

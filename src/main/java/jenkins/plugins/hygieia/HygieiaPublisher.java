@@ -32,6 +32,7 @@ public class HygieiaPublisher extends Notifier {
     private HygieiaTest hygieiaTest;
     private HygieiaArtifact hygieiaArtifact;
     private HygieiaSonar hygieiaSonar;
+    private HygieiaDeploy hygieiaDeploy;
 
     @Override
     public DescriptorImpl getDescriptor() {
@@ -53,6 +54,10 @@ public class HygieiaPublisher extends Notifier {
 
     public HygieiaSonar getHygieiaSonar() {
         return hygieiaSonar;
+    }
+
+    public HygieiaDeploy getHygieiaDeploy() {
+        return hygieiaDeploy;
     }
 
     public static class HygieiaArtifact {
@@ -87,6 +92,55 @@ public class HygieiaPublisher extends Notifier {
 
         public boolean checkFileds() {
             return (!"".equals(artifactName));
+        }
+    }
+
+    public static class HygieiaDeploy {
+        private final String artifactName;
+        private final String artifactDirectory;
+        private final String artifactGroup;
+        private final String artifactVersion;
+        private final String applicationName;
+        private final String environmentName;
+        private final boolean publishDeployStart;
+
+        @DataBoundConstructor
+        public HygieiaDeploy(String artifactDirectory, String artifactName, String artifactGroup, String artifactVersion, String applicationName, String environmentName, boolean publishDeployStart) {
+            this.artifactDirectory = artifactDirectory;
+            this.artifactName = artifactName;
+            this.artifactGroup = artifactGroup;
+            this.artifactVersion = artifactVersion;
+            this.applicationName = applicationName;
+            this.environmentName = environmentName;
+            this.publishDeployStart = publishDeployStart;
+        }
+
+        public String getArtifactName() {
+            return artifactName;
+        }
+
+        public String getArtifactDirectory() {
+            return artifactDirectory;
+        }
+
+        public String getArtifactGroup() {
+            return artifactGroup;
+        }
+
+        public String getArtifactVersion() {
+            return artifactVersion;
+        }
+
+        public String getApplicationName() {
+            return applicationName;
+        }
+
+        public String getEnvironmentName() {
+            return environmentName;
+        }
+
+        public boolean isPublishDeployStart() {
+            return publishDeployStart;
         }
     }
 
@@ -153,13 +207,15 @@ public class HygieiaPublisher extends Notifier {
 
     @DataBoundConstructor
     public HygieiaPublisher(final HygieiaBuild hygieiaBuild,
-                            final HygieiaTest hygieiaTest, final HygieiaArtifact hygieiaArtifact, final HygieiaSonar hygieiaSonar) {
+                            final HygieiaTest hygieiaTest, final HygieiaArtifact hygieiaArtifact, final HygieiaSonar hygieiaSonar, final HygieiaDeploy hygieiaDeploy) {
         super();
         this.hygieiaBuild = hygieiaBuild;
         this.hygieiaTest = hygieiaTest;
         this.hygieiaArtifact = hygieiaArtifact;
         this.hygieiaSonar = hygieiaSonar;
+        this.hygieiaDeploy = hygieiaDeploy;
     }
+
 
     public BuildStepMonitor getRequiredMonitorService() {
         return BuildStepMonitor.NONE;
@@ -238,7 +294,8 @@ public class HygieiaPublisher extends Notifier {
             HygieiaArtifact hygieiaArtifact = sr.bindJSON(HygieiaArtifact.class, (JSONObject) json.get("hygieiaArtifact"));
             HygieiaTest hygieiaTest = sr.bindJSON(HygieiaTest.class, (JSONObject) json.get("hygieiaTest"));
             HygieiaSonar hygieiaSonar = sr.bindJSON(HygieiaSonar.class, (JSONObject) json.get("hygieiaSonar"));
-            return new HygieiaPublisher(hygieiaBuild, hygieiaTest, hygieiaArtifact, hygieiaSonar);
+            HygieiaDeploy hygieiaDeploy = sr.bindJSON(HygieiaDeploy.class, (JSONObject) json.get("hygieiaDeploy"));
+            return new HygieiaPublisher(hygieiaBuild, hygieiaTest, hygieiaArtifact, hygieiaSonar, hygieiaDeploy);
         }
 
         @Override
