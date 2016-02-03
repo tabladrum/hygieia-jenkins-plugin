@@ -24,6 +24,11 @@ public class HygieiaUtils {
         return mapper.writeValueAsBytes(object);
     }
 
+    public static Object convertJsonToObject (String json, Class thisClass) throws IOException {
+        ObjectMapper mapper = new CustomObjectMapper();
+        return mapper.readValue(json,thisClass);
+    }
+
     public static List<File> getArtifactFiles(File rootDirectory, String pattern, List<File> results) {
         FileFilter filter = new WildcardFileFilter(pattern.replace("**", "*"), IOCase.SYSTEM);
         File[] temp = rootDirectory.listFiles(filter);

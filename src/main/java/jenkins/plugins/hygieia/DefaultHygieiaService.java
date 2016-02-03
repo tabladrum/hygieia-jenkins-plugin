@@ -8,10 +8,18 @@ import com.capitalone.dashboard.request.TestDataCreateRequest;
 import hudson.model.BuildListener;
 import hygieia.utils.HygieiaUtils;
 import org.apache.commons.httpclient.HttpStatus;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+//import org.json.simple.JSONArray;
 
 public class DefaultHygieiaService implements HygieiaService {
 
@@ -131,6 +139,37 @@ public class DefaultHygieiaService implements HygieiaService {
             responseValue = "";
         }
         return new HygieiaResponse(responseCode, responseValue);
+    }
+
+    private String getCollectorItemJSON(String type) {
+        RestCall restCall = new RestCall();
+        RestCall.RestCallResponse callResponse = restCall.makeRestCallGet(hygieiaAPIUrl + "/collector/item/type/" + type);
+        int responseCode = callResponse.getResponseCode();
+        if (responseCode != HttpStatus.SC_OK) {
+            logger.log(Level.WARNING, "Hygieia get collector items failed: " + responseCode);
+            return "";
+        }
+        logger.info(callResponse.getResponseString());
+        return callResponse.getResponseString();
+    }
+
+    public List<JSONObject> getCollectorItemOptions(String type)  {
+        List<JSONObject> options = new ArrayList<JSONObject>();
+
+        JSONParser parser = new JSONParser();
+        try {
+            JSONArray itemArray = (JSONArray) parser.parse(getCollectorItemJSON(type));
+            for (Object o : itemArray) {
+                JSONObject jo = (JSONObject) o;
+                JSONObject option = (JSONObject) jo.get("options");
+                if (option != null) options.add(option);
+                logger.info(option.toString());
+            }
+            return options;
+        } catch (ParseException e) {
+            logger.log(Level.WARNING, "Hygieia get collector items failed: Parsing JSON error.");
+            return options;
+        }
     }
 
     public boolean testConnection() {

@@ -8,6 +8,7 @@ import com.capitalone.dashboard.request.TestDataCreateRequest;
 import hudson.model.Descriptor;
 import hudson.util.FormValidation;
 import junit.framework.TestCase;
+import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,6 +16,7 @@ import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 @RunWith(Parameterized.class)
 public class HygieiaPublisherTest extends TestCase {
@@ -104,5 +106,10 @@ public class HygieiaPublisherTest extends TestCase {
         public HygieiaResponse publishDeployData(DeployDataCreateRequest request) {
             return hygieiaResponse;
         }
+
+        public List<JSONObject> getCollectorItemOptions(String type) {
+            return null;
+        }
+
     }
 }

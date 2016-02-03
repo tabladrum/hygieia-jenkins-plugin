@@ -5,6 +5,9 @@ import com.capitalone.dashboard.request.BuildDataCreateRequest;
 import com.capitalone.dashboard.request.CodeQualityCreateRequest;
 import com.capitalone.dashboard.request.DeployDataCreateRequest;
 import com.capitalone.dashboard.request.TestDataCreateRequest;
+import org.json.simple.JSONObject;
+
+import java.util.List;
 
 public interface HygieiaService {
     HygieiaResponse publishBuildData(BuildDataCreateRequest request);
@@ -18,4 +21,6 @@ public interface HygieiaService {
     HygieiaResponse publishSonarResults(CodeQualityCreateRequest request);
 
     HygieiaResponse publishDeployData(DeployDataCreateRequest request);
+
+    List<JSONObject> getCollectorItemOptions(String type);
 }

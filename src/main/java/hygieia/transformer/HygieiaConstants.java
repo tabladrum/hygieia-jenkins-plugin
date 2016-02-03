@@ -8,4 +8,6 @@ public class HygieiaConstants {
     public static final String UNIT_TEST_DISPLAY = "Unit Test";
     public static final String SECURITY_TEST_DISPLAY = "Security Test";
     public static final String REGRESSION_TEST_DISPLAY = "Regression Test";
+
+    public static final String COLLECTOR_ITEM_DEPLOYMENT = "deployment";
 }

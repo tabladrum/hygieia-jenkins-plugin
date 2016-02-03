@@ -45,12 +45,12 @@
             <f:checkbox name="publishDeployStart" title="Publish Deploy Start Status"  value="true"
                         checked="${instance.getHygieiaDeploy().isPublishDeployStart()}"/>
         </f:entry>
-        <f:entry title="Application Name" help="${rootURL}/plugin/hygieia-publisher/help-projectConfig-hygieiaApplicationName.html">
+        <f:entry title="Application Name" field="applicationName" help="${rootURL}/plugin/hygieia-publisher/help-projectConfig-hygieiaApplicationName.html">
             <f:textbox name="applicationName" value="${instance.getHygieiaDeploy().getApplicationName()}"
                        checkUrl="'descriptorByName/jenkins.plugins.hygieia.HygieiaPublisher/checkValue?value='+this.value"/>
         </f:entry>
 
-        <f:entry title="Environment Name" help="${rootURL}/plugin/hygieia-publisher/help-projectConfig-hygieiaEnvName.html">
+        <f:entry title="Environment Name" field="environmentName" help="${rootURL}/plugin/hygieia-publisher/help-projectConfig-hygieiaEnvName.html">
             <f:textbox name="environmentName" value="${instance.getHygieiaDeploy().getEnvironmentName()}"
                        checkUrl="'descriptorByName/jenkins.plugins.hygieia.HygieiaPublisher/checkValue?value='+this.value"/>
         </f:entry>

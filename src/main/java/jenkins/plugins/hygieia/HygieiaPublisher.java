@@ -6,6 +6,7 @@ import hudson.Extension;
 import hudson.Launcher;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
+import hudson.model.AutoCompletionCandidates;
 import hudson.model.BuildListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
@@ -15,6 +16,7 @@ import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hygieia.transformer.HygieiaConstants;
 import net.sf.json.JSONObject;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
@@ -22,7 +24,13 @@ import org.kohsuke.stapler.StaplerRequest;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
+
+//import org.json.simple.JSONObject;
 
 public class HygieiaPublisher extends Notifier {
 
@@ -252,6 +260,8 @@ public class HygieiaPublisher extends Notifier {
         private String hygieiaToken;
         private String hygieiaJenkinsName;
 
+        Map<String, Set<String>> appEnv = new HashMap<String, Set<String>>();
+
         public DescriptorImpl() {
             load();
         }
@@ -281,7 +291,90 @@ public class HygieiaPublisher extends Notifier {
             return model;
         }
 
+        /**
+         * This method provides auto-completion items for the 'state' field.
+         * Stapler finds this method via the naming convention.
+         *
+         * @param value The text that the user entered.
+         */
+        public AutoCompletionCandidates doAutoCompleteApplicationName(@QueryParameter String value, @QueryParameter("hygieiaAPIUrl") final String hygieiaAPIUrl,
+                                                                      @QueryParameter("hygieiaToken") final String hygieiaToken,
+                                                                      @QueryParameter("hygieiaJenkinsName") final String hygieiaJenkinsName) {
 
+            String hostUrl = hygieiaAPIUrl;
+            if (StringUtils.isEmpty(hostUrl)) {
+                hostUrl = this.hygieiaAPIUrl;
+            }
+            String targetToken = hygieiaToken;
+            if (StringUtils.isEmpty(targetToken)) {
+                targetToken = this.hygieiaToken;
+            }
+            String niceName = hygieiaJenkinsName;
+            if (StringUtils.isEmpty(niceName)) {
+                niceName = this.hygieiaJenkinsName;
+            }
+            AutoCompletionCandidates c = new AutoCompletionCandidates();
+
+            if (CollectionUtils.isEmpty(appEnv.keySet())) fillAppEnvMap(hostUrl, targetToken, niceName);
+
+            for (String aN : appEnv.keySet()) {
+                if ( aN.toLowerCase().startsWith(value.toLowerCase()))
+                    c.add(aN);
+            }
+            return c;
+        }
+
+
+        /**
+         * This method provides auto-completion items for the 'state' field.
+         * Stapler finds this method via the naming convention.
+         *
+         * @param value The text that the user entered.
+         */
+        public AutoCompletionCandidates doAutoCompleteEnvironmentName(@QueryParameter String value, @QueryParameter("hygieiaAPIUrl") final String hygieiaAPIUrl,
+                                                                      @QueryParameter("hygieiaToken") final String hygieiaToken,
+                                                                      @QueryParameter("hygieiaJenkinsName") final String hygieiaJenkinsName) {
+            String hostUrl = hygieiaAPIUrl;
+            if (StringUtils.isEmpty(hostUrl)) {
+                hostUrl = this.hygieiaAPIUrl;
+            }
+            String targetToken = hygieiaToken;
+            if (StringUtils.isEmpty(targetToken)) {
+                targetToken = this.hygieiaToken;
+            }
+            String niceName = hygieiaJenkinsName;
+            if (StringUtils.isEmpty(niceName)) {
+                niceName = this.hygieiaJenkinsName;
+            }
+
+            if (CollectionUtils.isEmpty(appEnv.keySet())) fillAppEnvMap(hostUrl, targetToken, niceName);
+
+            AutoCompletionCandidates c = new AutoCompletionCandidates();
+            for (String aN : appEnv.keySet())
+                for (String eN : appEnv.get(aN)) {
+                    if (eN.toLowerCase().startsWith(value.toLowerCase()))
+                        c.add(eN);
+            }
+            return c;
+        }
+
+
+        private void fillAppEnvMap(String hostUrl, String targetToken, String niceName) {
+            for (org.json.simple.JSONObject item : getHygieiaService(hostUrl, targetToken, niceName)
+                    .getCollectorItemOptions(HygieiaConstants.COLLECTOR_ITEM_DEPLOYMENT)) {
+                String name = (String) item.get("applicationName");
+                String env = (String) item.get("environmentName");
+                if (StringUtils.isEmpty(name) || StringUtils.isEmpty(env)) continue;
+
+                if (appEnv.get(name) == null) {
+                    Set<String> e = new HashSet<String>();
+                    e.add(env);
+                    appEnv.put(name, e);
+                } else {
+                    appEnv.get(name).add(name);
+                }
+            }
+        }
 
         public boolean isApplicable(Class<? extends AbstractProject> aClass) {
             return true;
@@ -330,7 +423,7 @@ public class HygieiaPublisher extends Notifier {
             }
             String name = hygieiaJenkinsName;
             if (StringUtils.isEmpty(name)) {
-                name = this.hygieiaToken;
+                name = this.hygieiaJenkinsName;
             }
             HygieiaService testHygieiaService = getHygieiaService(hostUrl, targetToken, name);
             if (testHygieiaService != null) {
@@ -342,7 +435,7 @@ public class HygieiaPublisher extends Notifier {
         }
 
         public FormValidation doCheckValue(@QueryParameter String value) throws IOException, ServletException {
-            if(value.isEmpty()) {
+            if (value.isEmpty()) {
                 return FormValidation.warning("You must fill this box!");
             }
             return FormValidation.ok();
