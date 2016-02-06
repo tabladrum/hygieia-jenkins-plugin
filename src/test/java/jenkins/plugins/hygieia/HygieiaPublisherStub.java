@@ -37,8 +37,8 @@ public class HygieiaPublisherStub extends HygieiaPublisher {
     }
 
     public static class HygieiaTestStub extends HygieiaTest {
-        public HygieiaTestStub (boolean publishTestStart, String testFileNamePattern, String testResultsDirectory, String testType) {
-            super(publishTestStart, testFileNamePattern, testResultsDirectory, testType);
+        public HygieiaTestStub (boolean publishTestStart, String testFileNamePattern, String testResultsDirectory, String testType, String applicationName, String environmentName) {
+            super(publishTestStart, testFileNamePattern, testResultsDirectory, testType, applicationName, environmentName);
         }
     }
 }

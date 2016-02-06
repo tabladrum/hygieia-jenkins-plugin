@@ -185,13 +185,17 @@ public class HygieiaPublisher extends Notifier {
         private final String testFileNamePattern;
         private final String testResultsDirectory;
         private final String testType;
+        private final String testApplicationName;
+        private final String testEnvironmentName;
 
         @DataBoundConstructor
-        public HygieiaTest(boolean publishTestStart, String testFileNamePattern, String testResultsDirectory, String testType) {
+        public HygieiaTest(boolean publishTestStart, String testFileNamePattern, String testResultsDirectory, String testType, String testApplicationName, String testEnvironmentName) {
             this.publishTestStart = publishTestStart;
             this.testFileNamePattern = testFileNamePattern;
             this.testResultsDirectory = testResultsDirectory;
             this.testType = testType;
+            this.testApplicationName = testApplicationName;
+            this.testEnvironmentName = testEnvironmentName;
         }
 
         public boolean isPublishTestStart() {
@@ -211,6 +215,13 @@ public class HygieiaPublisher extends Notifier {
             return testType;
         }
 
+        public String getTestApplicationName() {
+            return testApplicationName;
+        }
+
+        public String getTestEnvironmentName() {
+            return testEnvironmentName;
+        }
     }
 
     @DataBoundConstructor
@@ -339,9 +350,7 @@ public class HygieiaPublisher extends Notifier {
          */
         public AutoCompletionCandidates doAutoCompleteEnvironmentName(@QueryParameter String value, @QueryParameter("hygieiaAPIUrl") final String hygieiaAPIUrl,
                                                                       @QueryParameter("hygieiaToken") final String hygieiaToken,
-                                                                      @QueryParameter("hygieiaJenkinsName") final String hygieiaJenkinsName,
-                                                                      @QueryParameter("hygieiaDeploy.applicationName") final String applicationName,
-                                                                      @QueryParameter("applicationName") final String appName) {
+                                                                      @QueryParameter("hygieiaJenkinsName") final String hygieiaJenkinsName) {
             String hostUrl = hygieiaAPIUrl;
             if (StringUtils.isEmpty(hostUrl)) {
                 hostUrl = this.hygieiaAPIUrl;
@@ -355,11 +364,7 @@ public class HygieiaPublisher extends Notifier {
                 niceName = this.hygieiaJenkinsName;
             }
 
-            if (StringUtils.isEmpty(deployApplicationNameSelected)) {
-                deployEnvNames.clear();
-            }
-
-            if (CollectionUtils.isEmpty(deployEnvNames)) {
+            if (!StringUtils.isEmpty(deployApplicationNameSelected)) {
                 deployEnvNames = getHygieiaService(hostUrl, targetToken, niceName)
                         .getDeploymentEnvironments(deployApplicationNameSelected);
             }
@@ -383,6 +388,73 @@ public class HygieiaPublisher extends Notifier {
             }
         }
 
+        /**
+         * This method provides auto-completion items for the 'state' field.
+         * Stapler finds this method via the naming convention.
+         *
+         * @param value The text that the user entered.
+         */
+        public AutoCompletionCandidates doAutoCompleteTestApplicationName(@QueryParameter String value, @QueryParameter("hygieiaAPIUrl") final String hygieiaAPIUrl,
+                                                                          @QueryParameter("hygieiaToken") final String hygieiaToken,
+                                                                          @QueryParameter("hygieiaJenkinsName") final String hygieiaJenkinsName) {
+
+            String hostUrl = hygieiaAPIUrl;
+            if (StringUtils.isEmpty(hostUrl)) {
+                hostUrl = this.hygieiaAPIUrl;
+            }
+            String targetToken = hygieiaToken;
+            if (StringUtils.isEmpty(targetToken)) {
+                targetToken = this.hygieiaToken;
+            }
+            String niceName = hygieiaJenkinsName;
+            if (StringUtils.isEmpty(niceName)) {
+                niceName = this.hygieiaJenkinsName;
+            }
+            AutoCompletionCandidates c = new AutoCompletionCandidates();
+            if (CollectionUtils.isEmpty(deployAppNames)) fillApplicationNames(hostUrl, targetToken, niceName);
+            for (String aN : deployAppNames) {
+                if (aN.toLowerCase().startsWith(value.toLowerCase())) {
+                    c.add(aN);
+                }
+            }
+            return c;
+        }
+
+        /**
+         * This method provides auto-completion items for the 'state' field.
+         * Stapler finds this method via the naming convention.
+         *
+         * @param value The text that the user entered.
+         */
+        public AutoCompletionCandidates doAutoCompleteTestEnvironmentName(@QueryParameter String value, @QueryParameter("hygieiaAPIUrl") final String hygieiaAPIUrl,
+                                                                          @QueryParameter("hygieiaToken") final String hygieiaToken,
+                                                                          @QueryParameter("hygieiaJenkinsName") final String hygieiaJenkinsName) {
+            String hostUrl = hygieiaAPIUrl;
+            if (StringUtils.isEmpty(hostUrl)) {
+                hostUrl = this.hygieiaAPIUrl;
+            }
+            String targetToken = hygieiaToken;
+            if (StringUtils.isEmpty(targetToken)) {
+                targetToken = this.hygieiaToken;
+            }
+            String niceName = hygieiaJenkinsName;
+            if (StringUtils.isEmpty(niceName)) {
+                niceName = this.hygieiaJenkinsName;
+            }
+
+            if (!StringUtils.isEmpty(testApplicationNameSelected)) {
+                deployEnvNames = getHygieiaService(hostUrl, targetToken, niceName)
+                        .getDeploymentEnvironments(testApplicationNameSelected);
+            }
+
+            AutoCompletionCandidates c = new AutoCompletionCandidates();
+            for (String eN : deployEnvNames) {
+                if (eN.toLowerCase().startsWith(value.toLowerCase())) {
+                    c.add(eN);
+                }
+            }
+            return c;
+        }
 
         public boolean isApplicable(Class<? extends AbstractProject> aClass) {
             return true;
@@ -453,9 +525,10 @@ public class HygieiaPublisher extends Notifier {
             deployApplicationNameSelected = value;
             if (value.isEmpty()) {
                 return FormValidation.warning("You must fill this box!");
-            } else if (!CollectionUtils.isEmpty(deployAppNames) && !deployAppNames.contains(value.trim())) {
-                return FormValidation.warning("You have entered a name that does not exist in Hygieia yet. This will create a new application in Hygieia.");
             }
+//            else if (!CollectionUtils.isEmpty(deployAppNames) && !deployAppNames.contains(value.trim())) {
+//                return FormValidation.warning("You have entered a name that does not exist in Hygieia yet. This will create a new application in Hygieia.");
+//            }
 
             return FormValidation.ok();
         }
@@ -464,14 +537,40 @@ public class HygieiaPublisher extends Notifier {
             deployEnvSelected = value;
             if (value.isEmpty()) {
                 return FormValidation.warning("You must fill this box!");
-            } else if (!CollectionUtils.isEmpty(deployEnvNames) && !deployEnvNames.contains(value.trim())) {
-                return FormValidation.warning("You have entered a name that does not exist in Hygieia yet. This will create a new environment for application '" +
-                        deployApplicationNameSelected + "' in Hygieia.");
             }
+//            else if (!CollectionUtils.isEmpty(deployEnvNames) && !deployEnvNames.contains(value.trim())) {
+//                return FormValidation.warning("You have entered a name that does not exist in Hygieia yet. This will create a new environment for application '" +
+//                        deployApplicationNameSelected + "' in Hygieia.");
+//            }
 
             return FormValidation.ok();
         }
 
+
+        public FormValidation doCheckTestingAppNameValue(@QueryParameter String value) throws IOException, ServletException {
+            testApplicationNameSelected = value;
+            if (value.isEmpty()) {
+                return FormValidation.warning("You must fill this box!");
+            }
+//            else if (!CollectionUtils.isEmpty(deployAppNames) && !deployAppNames.contains(value.trim())) {
+//                return FormValidation.warning("You have entered a name that does not exist in Hygieia yet. This will create a new application in Hygieia.");
+//            }
+
+            return FormValidation.ok();
+        }
+
+        public FormValidation doCheckTestingEnvValue(@QueryParameter String value) throws IOException, ServletException {
+            testEnvSelected = value;
+            if (value.isEmpty()) {
+                return FormValidation.warning("You must fill this box!");
+            }
+//            else if (!CollectionUtils.isEmpty(deployEnvNames) && !deployEnvNames.contains(value.trim())) {
+//                return FormValidation.warning("You have entered a name that does not exist in Hygieia yet. This will create a new environment for application '" +
+//                        testApplicationNameSelected + "' in Hygieia.");
+//            }
+
+            return FormValidation.ok();
+        }
 
     }
 }

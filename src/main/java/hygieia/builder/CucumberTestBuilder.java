@@ -231,6 +231,9 @@ public class CucumberTestBuilder {
             request.setTotalCount(testResult.getTotalCount());
             request.setUnknownStatusCount(testResult.getUnknownStatusCount());
             request.getTestCapabilities().addAll(testResult.getTestCapabilities());
+
+            request.setTargetAppName(publisher.getHygieiaTest().getTestApplicationName());
+            request.setTargetEnvName(publisher.getHygieiaTest().getTestEnvironmentName());
             return request;
         }
         return null;

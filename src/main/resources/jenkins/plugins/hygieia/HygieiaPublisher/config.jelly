@@ -85,6 +85,15 @@
             <f:entry field="testType" title="Test Type" help="${rootURL}/plugin/hygieia-publisher/help-projectConfig-testType.html">
              <f:select default="${instance.getHygieiaTest().getTestType()}" />
             </f:entry>
+        <f:entry title="Application Name" field="testApplicationName" help="${rootURL}/plugin/hygieia-publisher/help-projectConfig-hygieiaApplicationName.html">
+            <f:textbox name="testApplicationName" value="${instance.getHygieiaTest().getTestApplicationName()}"
+                       checkUrl="'descriptorByName/jenkins.plugins.hygieia.HygieiaPublisher/checkTestingAppNameValue?value='+this.value"/>
+        </f:entry>
+
+        <f:entry title="Environment Name" field="testEnvironmentName" help="${rootURL}/plugin/hygieia-publisher/help-projectConfig-hygieiaEnvName.html">
+            <f:textbox name="testEnvironmentName" value="${instance.getHygieiaTest().getTestEnvironmentName()}"
+                       checkUrl="'descriptorByName/jenkins.plugins.hygieia.HygieiaPublisher/checkTestingEnvValue?value='+this.value"/>
+        </f:entry>
 
            <f:entry title="Results Directory" help="${rootURL}/plugin/hygieia-publisher/help-projectConfig-filePath.html">
                 <f:textbox name="testResultsDirectory" value="${instance.getHygieiaTest().getTestResultsDirectory()}"
