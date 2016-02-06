@@ -259,6 +259,13 @@ public class HygieiaPublisher extends Notifier {
         private String hygieiaAPIUrl;
         private String hygieiaToken;
         private String hygieiaJenkinsName;
+        private Set<String> deployAppNames = new HashSet<String>();
+        private Set<String> deployEnvNames = new HashSet<String>();
+
+        private String deployApplicationNameSelected;
+        private String deployEnvSelected;
+        private String testApplicationNameSelected;
+        private String testEnvSelected;
 
         Map<String, Set<String>> appEnv = new HashMap<String, Set<String>>();
 
@@ -314,12 +321,11 @@ public class HygieiaPublisher extends Notifier {
                 niceName = this.hygieiaJenkinsName;
             }
             AutoCompletionCandidates c = new AutoCompletionCandidates();
-
-            if (CollectionUtils.isEmpty(appEnv.keySet())) fillAppEnvMap(hostUrl, targetToken, niceName);
-
-            for (String aN : appEnv.keySet()) {
-                if ( aN.toLowerCase().startsWith(value.toLowerCase()))
+            if (CollectionUtils.isEmpty(deployAppNames)) fillApplicationNames(hostUrl, targetToken, niceName);
+            for (String aN : deployAppNames) {
+                if (aN.toLowerCase().startsWith(value.toLowerCase())) {
                     c.add(aN);
+                }
             }
             return c;
         }
@@ -333,7 +339,9 @@ public class HygieiaPublisher extends Notifier {
          */
         public AutoCompletionCandidates doAutoCompleteEnvironmentName(@QueryParameter String value, @QueryParameter("hygieiaAPIUrl") final String hygieiaAPIUrl,
                                                                       @QueryParameter("hygieiaToken") final String hygieiaToken,
-                                                                      @QueryParameter("hygieiaJenkinsName") final String hygieiaJenkinsName) {
+                                                                      @QueryParameter("hygieiaJenkinsName") final String hygieiaJenkinsName,
+                                                                      @QueryParameter("hygieiaDeploy.applicationName") final String applicationName,
+                                                                      @QueryParameter("applicationName") final String appName) {
             String hostUrl = hygieiaAPIUrl;
             if (StringUtils.isEmpty(hostUrl)) {
                 hostUrl = this.hygieiaAPIUrl;
@@ -347,34 +355,34 @@ public class HygieiaPublisher extends Notifier {
                 niceName = this.hygieiaJenkinsName;
             }
 
-            if (CollectionUtils.isEmpty(appEnv.keySet())) fillAppEnvMap(hostUrl, targetToken, niceName);
+            if (StringUtils.isEmpty(deployApplicationNameSelected)) {
+                deployEnvNames.clear();
+            }
 
+            if (CollectionUtils.isEmpty(deployEnvNames)) {
+                deployEnvNames = getHygieiaService(hostUrl, targetToken, niceName)
+                        .getDeploymentEnvironments(deployApplicationNameSelected);
+            }
             AutoCompletionCandidates c = new AutoCompletionCandidates();
-            for (String aN : appEnv.keySet())
-                for (String eN : appEnv.get(aN)) {
-                    if (eN.toLowerCase().startsWith(value.toLowerCase()))
-                        c.add(eN);
+            for (String eN : deployEnvNames) {
+                if (eN.toLowerCase().startsWith(value.toLowerCase())) {
+                    c.add(eN);
+                }
             }
             return c;
         }
 
 
-        private void fillAppEnvMap(String hostUrl, String targetToken, String niceName) {
+        private void fillApplicationNames(String hostUrl, String targetToken, String niceName) {
             for (org.json.simple.JSONObject item : getHygieiaService(hostUrl, targetToken, niceName)
                     .getCollectorItemOptions(HygieiaConstants.COLLECTOR_ITEM_DEPLOYMENT)) {
                 String name = (String) item.get("applicationName");
-                String env = (String) item.get("environmentName");
-                if (StringUtils.isEmpty(name) || StringUtils.isEmpty(env)) continue;
-
-                if (appEnv.get(name) == null) {
-                    Set<String> e = new HashSet<String>();
-                    e.add(env);
-                    appEnv.put(name, e);
-                } else {
-                    appEnv.get(name).add(name);
+                if (!StringUtils.isEmpty(name)) {
+                    deployAppNames.add(name);
                 }
             }
         }
+
 
         public boolean isApplicable(Class<? extends AbstractProject> aClass) {
             return true;
@@ -440,5 +448,30 @@ public class HygieiaPublisher extends Notifier {
             }
             return FormValidation.ok();
         }
+
+        public FormValidation doCheckDeployAppNameValue(@QueryParameter String value) throws IOException, ServletException {
+            deployApplicationNameSelected = value;
+            if (value.isEmpty()) {
+                return FormValidation.warning("You must fill this box!");
+            } else if (!CollectionUtils.isEmpty(deployAppNames) && !deployAppNames.contains(value.trim())) {
+                return FormValidation.warning("You have entered a name that does not exist in Hygieia yet. This will create a new application in Hygieia.");
+            }
+
+            return FormValidation.ok();
+        }
+
+        public FormValidation doCheckDeployEnvValue(@QueryParameter String value) throws IOException, ServletException {
+            deployEnvSelected = value;
+            if (value.isEmpty()) {
+                return FormValidation.warning("You must fill this box!");
+            } else if (!CollectionUtils.isEmpty(deployEnvNames) && !deployEnvNames.contains(value.trim())) {
+                return FormValidation.warning("You have entered a name that does not exist in Hygieia yet. This will create a new environment for application '" +
+                        deployApplicationNameSelected + "' in Hygieia.");
+            }
+
+            return FormValidation.ok();
+        }
+
+
     }
 }

@@ -47,12 +47,12 @@
         </f:entry>
         <f:entry title="Application Name" field="applicationName" help="${rootURL}/plugin/hygieia-publisher/help-projectConfig-hygieiaApplicationName.html">
             <f:textbox name="applicationName" value="${instance.getHygieiaDeploy().getApplicationName()}"
-                       checkUrl="'descriptorByName/jenkins.plugins.hygieia.HygieiaPublisher/checkValue?value='+this.value"/>
+                       checkUrl="'descriptorByName/jenkins.plugins.hygieia.HygieiaPublisher/checkDeployAppNameValue?value='+this.value"/>
         </f:entry>
 
         <f:entry title="Environment Name" field="environmentName" help="${rootURL}/plugin/hygieia-publisher/help-projectConfig-hygieiaEnvName.html">
             <f:textbox name="environmentName" value="${instance.getHygieiaDeploy().getEnvironmentName()}"
-                       checkUrl="'descriptorByName/jenkins.plugins.hygieia.HygieiaPublisher/checkValue?value='+this.value"/>
+                       checkUrl="'descriptorByName/jenkins.plugins.hygieia.HygieiaPublisher/checkDeployEnvValue?value='+this.value"/>
         </f:entry>
 
         <f:entry title="Artifact Directory" help="${rootURL}/plugin/hygieia-publisher/help-projectConfig-filePath.html">

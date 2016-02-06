@@ -17,6 +17,7 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 @RunWith(Parameterized.class)
 public class HygieiaPublisherTest extends TestCase {
@@ -108,6 +109,10 @@ public class HygieiaPublisherTest extends TestCase {
         }
 
         public List<JSONObject> getCollectorItemOptions(String type) {
+            return null;
+        }
+
+        public Set<String> getDeploymentEnvironments(String appName) {
             return null;
         }
 

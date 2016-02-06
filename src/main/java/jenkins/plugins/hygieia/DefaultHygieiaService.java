@@ -8,14 +8,18 @@ import com.capitalone.dashboard.request.TestDataCreateRequest;
 import hudson.model.BuildListener;
 import hygieia.utils.HygieiaUtils;
 import org.apache.commons.httpclient.HttpStatus;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -149,21 +153,52 @@ public class DefaultHygieiaService implements HygieiaService {
             logger.log(Level.WARNING, "Hygieia get collector items failed: " + responseCode);
             return "";
         }
-        logger.info(callResponse.getResponseString());
         return callResponse.getResponseString();
     }
 
-    public List<JSONObject> getCollectorItemOptions(String type)  {
+    private String getDeploymentDetailsJSON(String appName) {
+        ///deploy/status/application/
+        RestCall restCall = new RestCall();
+        RestCall.RestCallResponse callResponse = restCall.makeRestCallGet(hygieiaAPIUrl + "/deploy/status/application/" + appName);
+        int responseCode = callResponse.getResponseCode();
+        if (responseCode != HttpStatus.SC_OK) {
+            logger.log(Level.WARNING, "Hygieia get collector items failed: " + responseCode);
+            return "";
+        }
+        return callResponse.getResponseString();
+    }
+
+    public Set<String> getDeploymentEnvironments(String appName) {
+        Set<String> list = new HashSet<String>();
+        JSONParser parser = new JSONParser();
+        try {
+            JSONObject json = (JSONObject) parser.parse(getDeploymentDetailsJSON(appName));
+            if (json != null) {
+                JSONArray itemArray = (JSONArray) json.get("result");
+                if (!CollectionUtils.isEmpty(itemArray)) {
+                    for (Object o : itemArray) {
+                        list.add((String) ((JSONObject) o).get("name"));
+                    }
+                }
+            }
+        } catch (ParseException e) {
+            logger.log(Level.WARNING, "Hygieia fill deployment environments failed: Parsing JSON error.");
+        }
+        return list;
+    }
+
+    public List<JSONObject> getCollectorItemOptions(String type) {
         List<JSONObject> options = new ArrayList<JSONObject>();
 
         JSONParser parser = new JSONParser();
         try {
             JSONArray itemArray = (JSONArray) parser.parse(getCollectorItemJSON(type));
-            for (Object o : itemArray) {
-                JSONObject jo = (JSONObject) o;
-                JSONObject option = (JSONObject) jo.get("options");
-                if (option != null) options.add(option);
-                logger.info(option.toString());
+            if (!CollectionUtils.isEmpty(itemArray)) {
+                for (Object o : itemArray) {
+                    JSONObject jo = (JSONObject) o;
+                    JSONObject option = (JSONObject) jo.get("options");
+                    if (option != null) options.add(option);
+                }
             }
             return options;
         } catch (ParseException e) {
@@ -171,6 +206,7 @@ public class DefaultHygieiaService implements HygieiaService {
             return options;
         }
     }
+
 
     public boolean testConnection() {
         RestCall restCall = new RestCall();

@@ -111,8 +111,9 @@ public class DeployBuilder {
     private static String getFileNameMinusVersion(File file, String version) {
         String ext = FilenameUtils.getExtension(file.getName());
         if ("".equals(version)) return file.getName();
+
         int vIndex = file.getName().indexOf(version);
-        if (vIndex == 0) return file.getName();
+        if (vIndex <= 0) return file.getName();
         if ((file.getName().charAt(vIndex - 1) == '-') || (file.getName().charAt(vIndex - 1) == '_')) {
             vIndex = vIndex - 1;
         }
