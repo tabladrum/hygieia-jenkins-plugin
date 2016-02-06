@@ -42,14 +42,6 @@ public class DeployBuilder {
         String environmentName = publisher.getHygieiaDeploy().getEnvironmentName();
         String applicationName = publisher.getHygieiaDeploy().getApplicationName();
 
-        logger.info(directory);
-        logger.info(filePattern);
-        logger.info(group);
-        logger.info(version);
-        logger.info(environmentName);
-        logger.info(applicationName);
-
-
         EnvVars env;
         try {
             env = build.getEnvironment(listener);
@@ -103,7 +95,6 @@ public class DeployBuilder {
                 bac.setInstanceUrl(build.getProject().getAbsoluteUrl().substring(0, ind));
             }
 
-            logger.info(f.getAbsolutePath());
             deploys.add(bac);
         }
     }

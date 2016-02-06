@@ -144,12 +144,10 @@ public class ActiveNotifier implements FineGrainedNotifier {
             }
 
             boolean publishDeploy = (publisher.getHygieiaDeploy() != null) && successBuild;
-            logger.info("Publish Deploy is =" + publishDeploy);
             if (publishDeploy) {
                 DeployBuilder builder = new DeployBuilder(r, publisher, listener, buildResponse.getResponseValue());
                 Set<DeployDataCreateRequest> requests = builder.getDeploys();
                 for (DeployDataCreateRequest bac : requests) {
-                    logger.info(bac.getAppName());
                     HygieiaResponse deployResponse = getHygieiaService(r).publishDeployData(bac);
                     if (deployResponse.getResponseCode() == HttpStatus.SC_CREATED) {
                         listener.getLogger().println("Hygieia: Published Deploy Data: " +  deployResponse.toString());
