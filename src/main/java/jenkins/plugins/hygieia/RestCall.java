@@ -1,11 +1,16 @@
 package jenkins.plugins.hygieia;
 
+import hudson.ProxyConfiguration;
+import jenkins.model.Jenkins;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -20,10 +25,27 @@ public class    RestCall {
     public RestCall() {
     }
 
-    private HttpClient getHttpClient() {
-        return new HttpClient();
-    }
+//    private HttpClient getHttpClient() {
+//        return new HttpClient();
+//    }
 
+    protected HttpClient getHttpClient() {
+        HttpClient client = new HttpClient();
+        if (Jenkins.getInstance() != null) {
+            ProxyConfiguration proxy = Jenkins.getInstance().proxy;
+            if (proxy != null) {
+                client.getHostConfiguration().setProxy(proxy.name, proxy.port);
+                String username = proxy.getUserName();
+                String password = proxy.getPassword();
+                if (!StringUtils.isEmpty(username.trim()) && !StringUtils.isEmpty(password.trim())) {
+                    logger.info("Using proxy authentication (user=" + username + ")");
+                     client.getState().setProxyCredentials(AuthScope.ANY,
+                            new UsernamePasswordCredentials(username.trim(), password.trim()));
+                }
+            }
+        }
+        return client;
+    }
 
     public RestCallResponse makeRestCallPost(String url, String jsonString) {
         RestCallResponse response;
