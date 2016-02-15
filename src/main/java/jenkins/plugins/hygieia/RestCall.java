@@ -12,9 +12,12 @@ import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.net.ssl.X509TrustManager;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,7 +53,9 @@ public class    RestCall {
     public RestCallResponse makeRestCallPost(String url, String jsonString) {
         RestCallResponse response;
         HttpClient client = getHttpClient();
+
         PostMethod post = new PostMethod(url);
+
         try {
             StringRequestEntity requestEntity = new StringRequestEntity(
                     jsonString,
@@ -123,6 +128,21 @@ public class    RestCall {
 
         public void setResponseString(String responseString) {
             this.responseString = responseString;
+        }
+    }
+
+
+    private static class DefaultTrustManager implements X509TrustManager {
+
+        @Override
+        public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {}
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return null;
         }
     }
 
